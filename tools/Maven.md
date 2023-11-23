@@ -22,6 +22,10 @@ Maven 是 Apache 软件基金会的一个跨平台的项目管理工具，最初
 + **并行构建**：提高编译速度。
 + **优化错误报告**：提供更清晰详细的错误信息。
 
+Maven 包含了一个项目对象模型（Project Object Model），一组标准集合，一个项目生命周期（Project Lifecycle），一个依赖管理系统（Dependency Management System），和用来运行定义在生命周期阶段（phase）中插件（plugin）目标（goal）的逻辑。
+
+![在这里插入图片描述](https://ask.qcloudimg.com/http-save/yehe-7800900/fnlpd5j85z.png)
+
 # 安装
 
 1. **下载 Maven：**
@@ -69,7 +73,29 @@ apache-maven
 + **`NOTICE` 文件：** Maven 的通知文件，包含了软件的版权信息和其他信息。
 + **`README.txt` 文件：** Maven 的说明文件，提供了 Maven 的简要介绍和安装指南。
 
-## POM
+# 命令
+
++ **Lifecycle（生命周期）：** Maven 中定义了一系列阶段，按顺序执行以完成构建过程。例如，`clean`、`compile`、`test`、`package`、`install` 等。
++ **Phase（阶段）：** 生命周期中的某个具体阶段，代表了构建过程中的一个步骤。每个生命周期有多个阶段。
++ **Goal（目标）：** 描述了 Maven 插件的功能，用于执行特定任务。每个阶段都包含了一个或多个目标。
+
+## 常用命令
+
++ **`mvn clean`：** 清理项目，删除目标文件（如编译后的类文件、打包文件等）。
++ **`mvn compile`：** 编译项目源代码。
++ **`mvn test`：** 运行项目中的测试。
++ **`mvn package`：** 将编译后的代码打包，生成可分发的文件，比如 JAR、WAR。
++ **`mvn install`：** 将打包好的文件安装到本地 Maven 仓库中，供其他项目使用。
++ **`mvn deploy`：** 将构建好的文件部署到远程仓库，用于共享和分发。
+
+##  命令使用
+
++ **命令结构：** `mvn [goal]`，其中 `[goal]` 是指定的目标或阶段。
++ **组合命令：** 可以将多个命令组合在一起使用，例如 `mvn clean package`，以清理项目并打包。
++ **Profiles（配置文件）：** 使用 `-P` 参数指定某个配置文件。比如 `mvn clean install -P production`，表示使用生产环境的配置进行构建。
++ **帮助命令：** `mvn --help` 或 `mvn -h`，用于查看 Maven 命令的帮助信息。
+
+# 项目对象模型
 
 POM（Project Object Model）是 Maven 工程的基本工作单元，是一个 XML 文件，用于描述项目的基本信息、构建方式、依赖关系等。
 
@@ -81,41 +107,6 @@ POM 文件是 Maven 构建过程的核心，包含配置信息，例如：
 + **项目开发者列表和相关邮件列表信息：** 记录项目的开发者信息和相关沟通渠道。
 
 所有 POM 文件都需要 project 元素和三个必需字段：groupId，artifactId，version。
-
-```xml
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-    <!-- 模型版本 -->
-    <modelVersion>4.0.0</modelVersion>
-    
-    <!-- 公司或组织的唯一标识 -->
-    <groupId>com.companyname.project-group</groupId>
-    
-    <!-- 项目的唯一ID -->
-    <artifactId>project</artifactId>
-    
-    <!-- 版本号 -->
-    <version>1.0</version>
-</project>
-```
-
-+ **`project` 标签：** 工程的根标签，所有的配置信息都在此标签内部。
-+ **`modelVersion`：** POM 模型版本号，固定为 4.0.0，表示遵循 Maven POM 模型的规范版本。
-+ **`groupId`：** 项目所属的组织或公司的唯一标识符，通常以域名的方式命名，确保唯一性。
-+ **`artifactId`：** 项目的唯一标识符，代表项目名称，与 `groupId` 组合构成了唯一的项目标识。
-+ **`version`：** 项目的版本号，用于区分不同的项目版本，也用于在 Maven 仓库中识别不同的构建。
-
-### 父 POM
-
-父 POM 是指导多个子模块的 Maven 项目的顶层 POM 文件。它通过指定通用配置和依赖，实现了子模块之间共享配置和依赖的功能，从而提高了项目的管理和维护效率。
-
-+ **继承关系：** 父 POM 提供了通用配置和依赖信息，子模块通过在其 POM 文件中声明父 POM，继承、覆盖和补充父 POM 中的配置信息，从而减少重复配置。
-+ **集中管理：** 父 POM 可以集中管理项目的版本号、依赖库版本等信息，确保各个子模块的一致性。
-
-父 POM 本身的结构和内容与普通 POM 类似，但主要用于定义全局配置和依赖。
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -154,22 +145,729 @@ POM 文件是 Maven 构建过程的核心，包含配置信息，例如：
 </project>
 ```
 
-### Super POM
++ **`project` 标签：** 工程的根标签，所有的配置信息都在此标签内部。
++ **`modelVersion`：** POM 模型版本号，固定为 4.0.0，表示遵循 Maven POM 模型的规范版本。
++ **`groupId`：** 项目所属的组织或公司的唯一标识符，通常以域名的方式命名，确保唯一性。
++ **`artifactId`：** 项目的唯一标识符，代表项目名称，与 `groupId` 组合构成了唯一的项目标识。
++ **`version`：** 项目的版本号，用于区分不同的项目版本，也用于在 Maven 仓库中识别不同的构建。
 
-Super POM 是 Maven 默认的 POM，它为所有的 Maven 项目提供了通用的默认配置和依赖关系。即使在项目中没有显式定义父 POM，所有的 POM 都隐式继承自这个父 POM。这个父 POM 包含了一些默认的设置，为所有的 Maven 项目提供了基本的配置信息。
+## 父 POM
+
+父 POM 是指导多个子模块的 Maven 项目的顶层 POM 文件。它通过指定通用配置和依赖，实现了子模块之间共享配置和依赖的功能，从而提高了项目的管理和维护效率。
+
++ **继承关系：** 父 POM 提供了通用配置和依赖信息，子模块通过在其 POM 文件中声明父 POM，继承、覆盖和补充父 POM 中的配置信息，从而减少重复配置。
++ **集中管理：** 父 POM 可以集中管理项目的版本号、依赖库版本等信息，确保各个子模块的一致性。
+
+父 POM 本身的结构和内容与普通 POM 类似，但主要用于定义全局配置和依赖。
+
+## Super POM
+
+Super POM 是 Maven 默认的 POM，它为所有的 Maven 项目提供了通用的默认配置和依赖关系。即使在项目中没有显式定义父 POM，所有的 POM 都隐式继承自这个父 POM。
+
+这个父 POM 包含了一些默认的设置，为所有的 Maven 项目提供了基本的配置信息。
 
 + **默认仓库：** 父 POM 配置了默认的仓库地址为 http://repo1.maven.org/maven2。当 Maven 需要下载项目中声明的依赖时，会首先到这个默认仓库中寻找相应的依赖。
 + **默认配置：** 父 POM 包含了一些默认的配置，例如默认的构建插件版本、编译器版本等，为项目提供了基本的设置。
 
+# 生命周期
+
+在一个生命周期中，运行某个阶段的时候，它之前的所有阶段都会被运行。
+
+## Clean
+
+Maven 的 `clean` 生命周期包含一个阶段，它的主要任务是清理项目，删除之前构建过程生成的输出文件，确保项目处于干净的状态。这个阶段通常在构建之前执行，以防止旧的编译结果和临时文件对构建过程造成影响。
+
+`clean` 生命周期有三个阶段：
+
++ **pre-clean**：在 clean 执行之前，pre-clean 阶段用于执行一些清理前的准备工作。可以通过插件在这个阶段执行一些自定义的清理任务。
+
++ **clean**：删除目标目录中的编译输出文件。默认情况下，这个目录是 `target`，包含编译、测试、打包生成的文件以及其他构建生成的临时文件。
++ **post-clean**：在 clean 执行之后，post-clean 阶段用于执行一些清理后的工作或恢复操作。
+
+执行 `mvn clean` 命令会触发 `clean` 生命周期的`clean`阶段，Maven会清理项目目录下的 `target` 文件夹，删除之前构建过程生成的所有文件。
+
+## Default
+
+Maven 的 `default` 生命周期（也称为 `build` 生命周期）是构建过程中最常用的生命周期，负责将项目从源代码编译成可分发的产品。这个生命周期定义了从验证到部署的一系列阶段，确保了项目的顺利构建和发布。
+
+![img](https://www.runoob.com/wp-content/uploads/2018/09/maven-package-build-phase.png)
+
+`default`生命周期包括以下阶段：
+
+|   阶段   |   处理   |                             描述                             |
+| :------: | :------: | :----------------------------------------------------------: |
+| validate | 验证项目 | 验证项目的正确性，检查项目是否正确配置，所有必要信息是否可用 |
+| compile  | 执行编译 |      编译项目的源代码，将源代码编译成可执行的字节码文件      |
+|   test   |   测试   |        使用适当的单元测试框架（例如 JUnit）运行测试。        |
+| package  |   打包   |      将编译后的代码打包成可分发的格式，例如 JAR 或 WAR       |
+|  verify  |   检查   |  对集成测试的结果进行检查，以保证质量达标，通常用于集成测试  |
+| install  |   安装   |  将项目的构建结果安装到本地 Maven 仓库中，以供其他项目使用   |
+|  deploy  |   部署   |   拷贝最终的工程包到远程仓库中，以共享给其他开发人员和工程   |
+
+默认情况下，执行 `mvn install` 命令会触发 `default` 生命周期的所有阶段（包括其他未在上面罗列的生命周期阶段），按照上述顺序依次执行。但可以针对特定阶段执行单个阶段，比如 `mvn compile` 只会执行 `compile` 阶段。
+
+## Site
+
+Maven 的 `site` 生命周期主要关注项目文档和站点的生成，是用于创建项目站点文档的生命周期。
+
+这个生命周期包含了以下两个主要阶段：
+
++ **site**：该阶段用于生成项目文档和站点信息。它通常包括生成文档、报告和站点相关的内容，比如生成文档、API 文档、静态站点内容等。这个阶段的执行结果会存放在 `target/site` 目录下。
++ **deploy-site**：`site` 阶段生成的站点信息，使用 `deploy-site` 阶段可以将生成的站点信息发布到远程服务器，以便共享项目文档。这个阶段通常会将站点发布到远程服务器的特定位置，让团队或用户可以访问项目文档和信息。
+
+通过执行 `mvn site` 命令，Maven 会按照 `site` 生命周期的定义生成项目的站点文档，包括各种文档和报告。这有助于项目团队和用户了解项目的状态、文档、API 等信息。
+
+# 仓库
+
+在 Maven 的术语中，仓库是一个位置（place）。
+
+Maven 仓库是项目中依赖的第三方库，这个库所在的位置叫做仓库。
+
+在 Maven 中，任何一个依赖、插件或者项目构建的输出，都可以称之为构件。
+
+Maven 仓库能帮助我们管理构件（主要是JAR），它就是放置所有JAR文件（WAR，ZIP，POM等等）的地方。
+
+**坐标**
+
+![img](https://pic2.zhimg.com/80/v2-7616725b66b1da0f65fb8370d4b03699_720w.webp)
+
+maven坐标和仓库对应的映射关系：[groupId][artifactId][version][artifactId]-[version].jar
+
+**搜索顺序**
+
+当我们执行 Maven 构建命令时，Maven 开始按照以下顺序查找依赖的库：
+
++ **步骤 1** － 在本地仓库中搜索，如果找不到，执行步骤 2，如果找到了则执行其他操作。
++ **步骤 2** － 在中央仓库中搜索，如果找不到，并且有一个或多个远程仓库已经设置，则执行步骤 4，如果找到了则下载到本地仓库中以备将来引用。
++ **步骤 3** － 如果远程仓库没有被设置，Maven 将简单的停滞处理并抛出错误（无法找到依赖的文件）。
++ **步骤 4** － 在一个或多个远程仓库中搜索依赖的文件，如果找到则下载到本地仓库以备将来引用，否则 Maven 将停止处理并抛出错误（无法找到依赖的文件）。
+
+## 本地仓库
+
+Maven 的本地仓库，在安装 Maven 后并不会创建，它是在第一次执行 maven 命令的时候才被创建。
+
+运行 Maven 的时候，Maven 所需要的任何构件都是直接从本地仓库获取的。如果本地仓库没有，它会首先尝试从远程仓库下载构件至本地仓库，然后再使用本地仓库的构件。
+
+默认情况下，不管Linux还是 Windows，每个用户在自己的用户目录下都有一个路径名为 .m2/repository/ 的仓库目录。
+
+Maven 本地仓库默认被创建在 %USER_HOME% 目录下。要修改默认位置，在 %M2_HOME%\conf 目录中的 Maven 的 settings.xml 文件中定义另一个路径。
+
+```
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0    http://maven.apache.org/xsd/settings-1.0.0.xsd">      <localRepository>C:/MyLocalRepository</localRepository> </settings>
+```
+
+当你运行 Maven 命令，Maven 将下载依赖的文件到你指定的路径中。
+
+## 中央仓库
+
+Maven 中央仓库是由 Maven 社区提供的仓库，其中包含了大量常用的库。
+
+中央仓库包含了绝大多数流行的开源Java构件，以及源码、作者信息、SCM、信息、许可证信息等。一般来说，简单的Java项目依赖的构件都可以在这里下载到。
+
+中央仓库的关键概念：
+
++ 这个仓库由 Maven 社区管理。
++ 不需要配置。
++ 需要通过网络才能访问。
+
+要浏览中央仓库的内容，maven 社区提供了一个 URL：http://search.maven.org/#browse。使用这个仓库，开发人员可以搜索所有可以获取的代码库。
+
+## 远程仓库
+
+如果 Maven 在中央仓库中也找不到依赖的文件，它会停止构建过程并输出错误信息到控制台。为避免这种情况，Maven 提供了远程仓库的概念，它是开发人员自己定制仓库，包含了所需要的代码库或者其他工程中用到的 jar 文件。
+
+举例说明，使用下面的 pom.xml，Maven 将从远程仓库中下载该 pom.xml 中声明的所依赖的（在中央仓库中获取不到的）文件。
+
+```
+<project xmlns="http://maven.apache.org/POM/4.0.0"    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0    http://maven.apache.org/xsd/maven-4.0.0.xsd">    <modelVersion>4.0.0</modelVersion>    <groupId>com.companyname.projectgroup</groupId>    <artifactId>project</artifactId>    <version>1.0</version>    <dependencies>       <dependency>          <groupId>com.companyname.common-lib</groupId>          <artifactId>common-lib</artifactId>          <version>1.0.0</version>       </dependency>    <dependencies>    <repositories>       <repository>          <id>companyname.lib1</id>          <url>http://download.companyname.org/maven2/lib1</url>       </repository>       <repository>          <id>companyname.lib2</id>          <url>http://download.companyname.org/maven2/lib2</url>       </repository>    </repositories> </project>
+```
+
+# 目录结构
+
+```
+my-project
+|-- pom.xml
+|-- src
+|   |-- main
+|   |   |-- java         # Java源代码
+|   |   |-- resources    # 资源文件
+|   |-- test
+|       |-- java         # 测试源代码
+|       |-- resources    # 测试资源文件
+|-- target               # 构建生成的目标文件
+|-- .mvn                 # Maven wrapper配置（可选）
+|-- .gitignore           # Git忽略文件配置
+|-- .editorconfig        # 编辑器配置（可选）
+```
+
++ **`pom.xml`：** Maven 项目的核心配置文件，包含项目的基本信息、依赖关系、插件配置等。
++ **`src` 目录：** 存放项目的源代码和资源文件。
+  + **`main` 目录：**
+    + **`java`：** 存放主要的 Java 源代码。
+    + **`resources`：** 存放主要的资源文件，如配置文件等。
+  + **`test` 目录：**
+    + **`java`：** 存放测试用的 Java 源代码。
+    + **`resources`：** 存放测试用的资源文件。
++ **`target` 目录：** 存放编译生成的目标文件，包括生成的 JAR 或 WAR 文件等。
++ **`.mvn` 目录（可选）：** Maven wrapper的配置目录，用于支持项目的独立构建，无需全局安装 Maven。
++ **`.gitignore` 文件：** Git 版本控制忽略配置文件，定义哪些文件不会被 Git 跟踪。
++ **`.editorconfig` 文件（可选）：** 编辑器配置文件，定义不同编辑器的一致性配置，以确保团队协作中的一致性。
+
+# 配置
+
+构建配置文件是一系列的配置项的值，可以用来设置或者覆盖 Maven 构建默认值。
+
+使用构建配置文件，你可以为不同的环境，比如说生产环境（Production）和开发（Development）环境，定制构建方式。
+
+配置文件在 pom.xml 文件中使用 activeProfiles 或者 profiles 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 POM，并且用来给参数设定不同的目标环境（比如说，开发（Development）、测试（Testing）和生产环境（Production）中数据库服务器的地址）。
+
+## 类型
+
+1. **项目级（Per Project）**：
+   + **位置：** 定义在项目的 POM 文件 `pom.xml` 中。
+   + 这种配置是针对单个项目的，放置于项目POM文件中。它允许针对特定项目定义构建和依赖管理的设置，例如编译器版本、依赖库版本等。
+2. **用户级 （Per User）**：
+   + **位置：** 定义在Maven的用户级设置xml文件中 (`%USER_HOME%/.m2/settings.xml`)。
+   + 这种配置是针对特定用户的。它允许在用户级别设置Maven的行为，比如镜像设置、代理设置、服务器凭证等。这些配置对于所有项目都是通用的。
+3. **全局（Global）**：
+   + **位置：** 定义在Maven全局的设置xml文件中 (`%M2_HOME%/conf/settings.xml`)。
+   + 这种配置是全局性的，适用于所有用户和项目。通常由系统管理员或者Maven安装者设置，用于配置全局行为，例如默认的仓库地址、插件组、全局性的代理设置等。
+
+用户级和全局配置的 `setting.xml` 文件中，根标签为 `<settings>` ，项目级中的 `pom.xml` 根标签为 `<project>` 。
+
+## 全局配置
+
+Maven 使用 `settings.xml` 作为全局配置文件，它包含了一些 Maven 运行所需的全局设置和配置选项。这个文件通常位于 `Maven_Home/conf` 目录下。
+
++ **配置仓库（Repository）信息**：指定 Maven 从哪里下载依赖，以及将依赖上传到哪个仓库。
++ **设置全局属性（Global Properties）**：配置全局使用的属性，比如编码、Maven 版本等。
++ **配置代理服务器（Proxy Server）**：允许在需要时使用代理服务器来访问远程仓库。
++ **定义Maven Profiles**：可以针对不同的环境设置不同的配置。
+
+### 本地仓库路径
+
+这个设置指定了Maven在本地存储依赖库的位置。这个本地仓库路径配置项允许你指定Maven在本地文件系统中存储依赖项的位置。
+
+```xml
+<localRepository>/path/to/your/local/repo</localRepository>
+```
+
+这个配置指定了本地仓库的路径，默认是 `~/.m2/repository`。
+
+### 代理配置
+
+通过配置代理来让 Maven 能够通过代理服务器访问远程仓库。这在你的网络环境中需要代理才能访问外部资源时非常有用。
+
+```xml
+<proxies>
+  <proxy>
+    <id>example-proxy</id>
+    <active>true</active>
+    <protocol>http</protocol>
+    <host>proxy.example.com</host>
+    <port>8080</port>
+    <!-- 可选的用户名和密码，如果需要认证访问 -->
+    <!-- <username>your_username</username>
+      <password>your_password</password> -->
+    <!-- 可选的非代理主机列表 -->
+    <!-- <nonProxyHosts>local.net|some.host.com</nonProxyHosts> -->
+  </proxy>
+</proxies>
+```
+
++ `<id>`：代理的唯一标识符。
++ `<active>`：是否激活代理配置。
++ `<protocol>`：代理服务器的协议，例如 `http` 或 `https`。
++ `<host>`：代理服务器的主机名或 IP 地址。
++ `<port>`：代理服务器的端口号。
++ `<username>` 和 `<password>`：可选项，如果代理需要认证，可以提供用户名和密码。
++ `<nonProxyHosts>`：可选项，用于指定不需要使用代理访问的主机列表。
+
+### 服务器凭证
+
+配置服务器凭证来访问需要身份验证的远程仓库或服务。这些凭证可以用于访问私有的 Maven 仓库或者其他需要身份验证的远程资源。
+
+```xml
+<servers>
+  <server>
+    <id>example-repo</id>
+    <username>your_username</username>
+    <password>your_password</password>
+    <!-- 可选的私钥/公钥认证 -->
+    <!-- <privateKey>/path/to/privatekey</privateKey>
+      <passphrase>your_passphrase</passphrase> -->
+  </server>
+</servers>
+```
+
++ `<id>`：服务器的唯一标识符，用于关联服务器和凭证。
++ `<username>` 和 `<password>`：用于验证的用户名和密码。
++ `<privateKey>` 和 `<passphrase>`：可选项，如果服务器使用 SSH 密钥认证，可以指定私钥的路径和解密密钥。
+
+### 镜像设置
+
+可以配置镜像来加速构建过程并优化下载依赖项的速度。镜像定义了 Maven 应该从哪个远程仓库获取构建所需的资源。
+
+```xml
+<mirrors>
+  <mirror>
+    <id>mirror_id</id>
+    <mirrorOf>central</mirrorOf>
+    <url>https://maven.example.com/repository/maven-central/</url>
+    <blocked>false</blocked>
+    <mirrorOfLayouts>default,legacy</mirrorOfLayouts>
+  </mirror>
+</mirrors>
+```
+
++ `<mirror>`：镜像配置的起始标签。
++ `<id>`：镜像的唯一标识符。
++ `<mirrorOf>`：指定需要镜像的远程仓库。`central` 通常指代 Maven 中央仓库。可以是一个逗号分隔的列表，指定多个仓库。
++ `<url>`：镜像仓库的地址。
++ `<blocked>`：标志该镜像是否被阻止（`true` 或 `false`）。如果设置为 `true`，Maven 不会使用该镜像。
++ `<mirrorOfLayouts>`：指定镜像匹配的仓库布局。默认情况下，使用 `default,legacy`。
+
+#### 常用镜像
+
+**阿里云**
+
+```xml
+<mirror>
+    <id>aliyunmaven</id>
+    <mirrorOf>*</mirrorOf>
+    <name>阿里云公共仓库</name>
+    <url>https://maven.aliyun.com/repository/public</url>
+</mirror>
+```
+
+**华为云**
+
+```xml
+<mirror>
+　　<id>huaweicloud</id>
+   <name>华为云 maven</name>
+   <mirrorOf>*</mirrorOf>
+   <url>https://mirrors.huaweicloud.com/repository/maven/</url>
+</mirror>
+```
+
+**腾讯云**
+
+```xml
+<mirror>
+　　<id>nexus-tencentyun</id>
+　　<mirrorOf>*</mirrorOf>
+　　<name>Nexus tencentyun</name>
+　　<url>http://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
+</mirror>
+```
+
+### Profile 配置
+
+在 Maven 的 `settings.xml` 或者项目的 `pom.xml` 文件中，可以使用 `profiles` 元素定义不同的构建配置文件，以便根据不同的环境需求激活特定的配置。
+
+```xml
+<profiles>
+  <profile>
+    <id>development</id>
+    <activation>
+      <activeByDefault>true</activeByDefault>
+    </activation>
+    <properties>
+      <!-- 定义特定于开发环境的属性 -->
+      <env>development</env>
+      <database.url>jdbc:mysql://localhost:3306/dev_db</database.url>
+    </properties>
+  </profile>
+
+  <profile>
+    <id>production</id>
+    <properties>
+      <!-- 定义特定于生产环境的属性 -->
+      <env>production</env>
+      <database.url>jdbc:mysql://production-server/db</database.url>
+    </properties>
+  </profile>
+</profiles>
+```
+
++ `<profiles>`：用于定义不同的构建配置文件。
++ `<profile>`：每个配置文件的起始标签。
++ `<id>`：配置文件的唯一标识符。
++ `<activation>`：定义何时激活配置文件的规则。
+  + `<activeByDefault>`：如果设置为 `true`，表示默认激活该配置文件。
++ `<properties>`：配置文件中的属性设置。
+  + 这里的属性可以根据环境需求设置不同的值，比如数据库连接的 URL、环境标识等。
+
+Profile 可以在不同环境下使用不同的配置，可以设置默认激活的 profile，或根据不同条件激活 profile。
+
+### 插件组
+
+`pluginGroups` 元素是 Maven 设置文件 `settings.xml` 中的一个部分，用于定义自定义插件组。
+
+当使用 Maven 执行构建时，Maven 会在本地仓库中查找并下载所需的插件。通常情况下，Maven 会从 Maven 中央仓库（Central Repository）下载插件。
+
+当可能需要使用自己或组织内部的自定义插件。在这种情况下，你可以使用 `pluginGroups` 元素配置自定义的插件组。
+
+```xml
+<pluginGroups>
+  <pluginGroup>com.example.myplugins</pluginGroup>
+  <pluginGroup>org.company.internalplugins</pluginGroup>
+</pluginGroups>
+```
+
++ `<pluginGroup>`：插件组的名称，即插件坐标的前缀。可以指定多个插件组。
+
+通过这种配置，当你在项目的 POM 文件中使用插件时，Maven 将首先查找这些自定义插件组，然后再从 Maven 中央仓库中查找。这样，你就可以方便地使用自己或组织内部的自定义插件，而不必每次都指定完整的插件坐标。
+
+## 项目配置
+
+### 基本配置
+
++ **project** - `project` 是 pom.xml 中描述符的根。
++ **modelVersion** - `modelVersion` 指定 pom.xml 符合哪个版本的描述符。maven 2 和 3 只能为 4.0.0。
+
+一般 jar 包被识别为： `groupId:artifactId:version` 的形式。
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.codehaus.mojo</groupId>
+  <artifactId>my-project</artifactId>
+  <version>1.0</version>
+  <packaging>war</packaging>
+</project>
+```
+
+###  依赖配置
+
+在 Maven 中，项目依赖配置是指明项目所需外部库、组件或模块的过程。
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.example</groupId>
+        <artifactId>my-library</artifactId>
+        <version>1.0</version>
+    </dependency>
+</dependencies>
+```
+
+**依赖的坐标**：
+
++ **`groupId`：** 依赖的组织或公司的唯一标识符。
++ **`artifactId`：** 依赖的唯一标识符，代表库、组件或模块的名称。
++ **`version`：** 依赖的版本号，用于确定使用的特定版本。
+
+**依赖范围（Scope）**：
+
++ **`compile`：** 默认范围，适用于所有阶段。表示依赖会被编译、测试和运行。
++ **`provided`：** 表示依赖在编译和测试阶段使用，但在运行时由 JDK 或容器提供。
++ **`runtime`：** 表示依赖在运行和测试阶段使用，但不参与编译。通常用于运行时。
++ **`test`：** 表示依赖仅在测试阶段使用。
++ **`system`：** 需要显式提供 `path` 参数指定依赖的路径，不推荐使用。
+
+*scope就是依赖的范围*
+
+**1、compile，**默认值，适用于所有阶段（开发、测试、部署、运行），本jar会一直存在所有阶段。
+
+**2、provided，**只在开发、测试阶段使用，目的是不让Servlet容器和你本地仓库的jar包冲突 。如servlet.jar。
+
+**3、runtime，**只在运行时使用，如JDBC驱动，适用运行和测试阶段。
+
+**4、test，**只在测试时使用，用于编译和运行测试代码。不会随项目发布。
+
+**5、system，**类似provided，需要显式提供包含依赖的jar，Maven不会在Repository中查找它。
+
+**传递性依赖（Transitive Dependencies）：** Maven 能够自动解决依赖的依赖。例如，如果 A 依赖于 B，B 又依赖于 C，那么 Maven 会自动获取并管理 C。
+
+**依赖排除**：
+
++ **`<exclusions>` 元素：** 在 POM 中排除依赖的特定传递性依赖。例如，排除某个传递性依赖，使得它不会被引入到项目中。
+
+**依赖管理和版本冲突**：
+
++ **`<dependencyManagement>` 元素：** 可以在父 POM 中集中管理项目所用的依赖版本，避免不同模块使用不同版本的依赖而造成冲突。
+
+**相关指令**：
+
++ **`mvn dependency:tree`：** 查看项目依赖树，列出所有依赖及其传递性依赖。
++ **`mvn versions:display-dependency-updates`：** 查找项目中可以更新的依赖版本。
+
+### 模块配置
+
+### 属性配置
+
+属性列表。定义的属性可以在 pom.xml 文件中任意处使用。使用方式为 `${propertie}` 。
+
+```xml
+<properties>
+  <maven.compiler.source>1.7<maven.compiler.source>
+  <maven.compiler.target>1.7<maven.compiler.target>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+</properties>
+```
+
+### 构建配置
 
 
 
+### 插件配置
+
+在 Maven 中，插件是执行构建过程中最核心的组件之一。插件配置允许开发者指定在构建过程中运行的插件以及这些插件的行为。
+
+```xml
+<build>
+  <plugins>
+    <!-- 插件的配置 -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.8.1</version>
+      <configuration>
+        <!-- 插件的配置项 -->
+        <source>1.8</source>
+        <target>1.8</target>
+        <encoding>UTF-8</encoding>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+```
+
++ `<build>`：用于定义项目构建相关配置。
++ `<plugins>`：插件配置的容器。
++ `<plugin>`：插件的配置。
+  + `<groupId>`、`<artifactId>`、`<version>`：插件的坐标信息，用于确定具体的插件。
+  + `<configuration>`：用于配置插件的具体选项。
+    + 在这个例子中，`maven-compiler-plugin` 插件被配置为使用 Java 1.8 版本的编译源代码。
+
+**插件配置的常见选项**
+
++ `<groupId>`、`<artifactId>`、`<version>`：插件的坐标信息，指定要使用的插件。
++ `<executions>`：指定插件的执行时机和顺序。
++ `<configuration>`：插件的具体配置参数，取决于插件本身支持的配置项。
++ `<dependencies>`：插件运行所需要的依赖配置。
+
+### 项目信息
+
+### 环境配置
+
+
+
+## 构建配置
+
+Maven的构建配置文件可以通过多种方式激活。
+
++ 使用命令控制台输入显式激活。
++ 通过 maven 设置。
++ 基于环境变量（用户或者系统变量）。
++ 操作系统设置（比如说，Windows系列）。
++ 文件的存在或者缺失。
+
+其中在src/main/resources文件夹下有三个用于测试文件：
+
+| 文件名              | 描述                                 |
+| :------------------ | :----------------------------------- |
+| env.properties      | 如果未指定配置文件时默认使用的配置。 |
+| env.test.properties | 当测试配置文件使用时的测试配置。     |
+| env.prod.properties | 当生产配置文件使用时的生产配置。     |
+
+**注意：**这三个配置文件并不是代表构建配置文件的功能，而是用于本次测试的目的；比如，我指定了构建配置文件为 prod 时，项目就使用 env.prod.properties文件。
+
+**注意：**下面的例子仍然是使用 AntRun 插件，因为此插件能绑定 Maven 生命周期阶段，并通过 Ant 的标签不用编写一点代码即可输出信息、复制文件等，经此而已。其余的与本次构建配置文件无关。
+
+### 1、配置文件激活
+
+profile 可以让我们定义一系列的配置信息，然后指定其激活条件。这样我们就可以定义多个 profile，然后每个 profile 对应不同的激活条件和配置信息，从而达到不同环境使用不同配置信息的效果。
+
+以下实例，我们将 maven-antrun-plugin:run 目标添加到测试阶段中。这样我们可以在不同的 profile 中输出文本信息。我们将使用 pom.xml 来定义不同的 profile，并在命令控制台中使用 maven 命令激活 profile。
+
+**注意：****构建配置文件**采用的是 **<profiles>** 节点。
+
+**说明：**上面新建了三个 **<profiles>**，其中 **<id>** 区分了不同的 **<profiles>** 执行不同的 AntRun 任务；而 AntRun 的任务可以这么理解，AntRun 监听 test 的 Maven 生命周期阶段，当 Maven 执行 test 时，就触发了 AntRun 的任务，任务里面为输出文本并复制文件到指定的位置；而至于要执行哪个 AntRun 任务，此时**构建配置文件**起到了传输指定的作用，比如，通过命令行参数输入指定的 **<id>**。
+
+执行命令：
+
+```
+mvn test -Ptest
+```
+
+提示：第一个 test 为 Maven 生命周期阶段，第 2 个 test 为**构建配置文件**指定的 <id> 参数，这个参数通过 **-P** 来传输，当然，它可以是 prod 或者 normal 这些由你定义的**<id>**。
+
+
+
+
+
+# 依赖管理
+
+① 依赖的传递性
+
+
+
+![img](https://pic3.zhimg.com/80/v2-1b85ab200f746e31b17af2e56c2149ae_720w.webp)
+
+
+
+WebMavenDemo项目依赖JavaMavenService1 JavaMavenService1项目依赖JavaMavenService2
+
+pom.xml文件配置好依赖关系后，必须首先mvn install后，依赖的jar包才能使用。
+
++ WebMavenDemo的pom.xml文件想能编译通过，JavaMavenService1必须mvn install
++ JavaMavenService的pom.xml文件想能编译通过，JavaMavenService2必须mvn install
+
+传递性：
+
+
+
+![img](https://pic3.zhimg.com/80/v2-eed1e9befa160f92c491acc7082fd2ce_720w.webp)
+
+
+
+在Eclipse中，为JavaMavenService2中增加了一个spring-core.jar包后，会惊喜的发现依赖的两个项目都自动的增加了这个jar包，这就是依赖的传递性。
+
+> 注意：非compile范围的依赖是不能传递的。
+
+② 依赖版本的原则：
+
+1、路径最短者优先原则
+
+
+
+![img](https://pic4.zhimg.com/80/v2-bffd6b471598112f2e70c933a1537c67_720w.webp)
+
+
+
+Service2的log4j的版本是1.2.7版本，Service1排除了此包的依赖，自己加了一个Log4j的1.2.9的版本，那么WebMavenDemo项目遵守路径最短优先原则，Log4j的版本和Sercive1的版本一致。
+
+2、路径相同先声明优先原则
+
+
+
+![img](https://pic4.zhimg.com/80/v2-a5d3b9efd0596dcf439306b61f5f9083_720w.webp)
+
+
+
+这种场景依赖关系发生了变化，WebMavenDemo项目依赖Sercive1和Service2，它俩是同一个路径，那么谁在WebMavenDemo的pom.xml中先声明的依赖就用谁的版本。
+
+③ 统一管理依赖的版本：
+
+
+
+![img](https://pic4.zhimg.com/80/v2-b6ad3906b2c31b1804ba1099fb2e847b_720w.webp)
+
+
+
+为了统一管理版本号，可以使用properties标签，里面可以自定义版本的标签名。在使用的地方使用${自定义标签名}
+
+
+
+Maven 一个核心的特性就是依赖管理。当我们处理多模块的项目（包含成百上千个模块或者子项目），模块间的依赖关系就变得非常复杂，管理也变得很困难。针对此种情形，Maven 提供了一种高度控制的方法。
+
+------
+
+## 可传递性依赖发现
+
+一种相当常见的情况，比如说 A 依赖于其他库 B。如果，另外一个项目 C 想要使用 A ，那么 C 项目也需要使用库 B。
+
+Maven 可以避免去搜索所有所需库的需求。Maven 通过读取项目文件（pom.xml），找出它们项目之间的依赖关系。
+
+我们需要做的只是在每个项目的 pom 中定义好直接的依赖关系。其他的事情 Maven 会帮我们搞定。
+
+通过可传递性的依赖，所有被包含的库的图形会快速的增长。当有重复库时，可能出现的情形将会持续上升。Maven 提供一些功能来控制可传递的依赖的程度。
+
+| 功能     | 功能描述                                                     |
+| :------- | :----------------------------------------------------------- |
+| 依赖调节 | 决定当多个手动创建的版本同时出现时，哪个依赖版本将会被使用。 如果两个依赖版本在依赖树里的深度是一样的时候，第一个被声明的依赖将会被使用。 |
+| 依赖管理 | 可以直接指定手动创建的某个版本供使用。例如，假设项目 C 包含了项目 B 作为其依赖项，而项目 B 又依赖于项目 A。在这种情况下，可以明确指定在项目 B 被引用时使用的项目 A 的版本。这意味着您可以控制项目 A 的哪个特定版本会被项目 B 使用。 |
+| 依赖范围 | 包含在构建过程每个阶段的依赖。                               |
+| 依赖排除 | 任何可传递的依赖都可以通过 "exclusion" 元素被排除在外。举例说明，A 依赖 B， B 依赖 C，因此 A 可以标记 C 为 "被排除的"。 |
+| 依赖可选 | 任何可传递的依赖可以被标记为可选的，通过使用 "optional" 元素。例如：A 依赖 B， B 依赖 C。因此，B 可以标记 C 为可选的， 这样 A 就可以不再使用 C。 |
+
+------
+
+## 依赖范围
+
+传递依赖发现可以通过使用如下的依赖范围来得到限制：
+
+| 范围     | 描述                                                         |
+| :------- | :----------------------------------------------------------- |
+| 编译阶段 | 该范围表明相关依赖是只在项目的类路径下有效。默认取值。       |
+| 供应阶段 | 该范围表明相关依赖是由运行时的 JDK 或者 网络服务器提供的。   |
+| 运行阶段 | 该范围表明相关依赖在编译阶段不是必须的，但是在执行阶段是必须的。 |
+| 测试阶段 | 该范围表明相关依赖只在测试编译阶段和执行阶段。               |
+| 系统阶段 | 该范围表明你需要提供一个系统路径。                           |
+| 导入阶段 | 该范围只在依赖是一个 pom 里定义的依赖时使用。同时，当前项目的POM 文件的 部分定义的依赖关系可以取代某特定的 POM。 |
+
+# 插件
+
+Maven 有以下三个标准的生命周期：
+
++ **clean**：项目清理的处理
++ **default(或 build)**：项目部署的处理
++ **site**：项目站点文档创建的处理
+
+每个生命周期中都包含着一系列的阶段(phase)。这些 phase 就相当于 Maven 提供的统一的接口，然后这些 phase 的实现由 Maven 的插件来完成。
+
+我们在输入 mvn 命令的时候 比如 **mvn clean**，clean 对应的就是 Clean 生命周期中的 clean 阶段。但是 clean 的具体操作是由 **maven-clean-plugin** 来实现的。
+
+所以说 Maven 生命周期的每一个阶段的具体实现都是由 Maven 插件实现的。
+
+Maven 实际上是一个依赖插件执行的框架，每个任务实际上是由插件完成。Maven 插件通常被用来：
+
++ 创建 jar 文件
++ 创建 war 文件
++ 编译代码文件
++ 代码单元测试
++ 创建工程文档
++ 创建工程报告
+
+插件通常提供了一个目标的集合，并且可以使用下面的语法执行：
+
+```
+<code>mvn [plugin-name]:[goal-name]</code>
+```
+
+例如，一个 Java 工程可以使用 maven-compiler-plugin 的 compile-goal 编译，使用以下命令：
+
+```
+<code>mvn compiler:compile</code>
+```
+
+## 插件类型
+
+Maven 提供了下面两种类型的插件：
+
+| 类型              | 描述                                               |
+| :---------------- | :------------------------------------------------- |
+| Build plugins     | 在构建时执行，并在 pom.xml 的 元素中配置。         |
+| Reporting plugins | 在网站生成过程中执行，并在 pom.xml 的 元素中配置。 |
+
+下面是一些常用插件的列表：
+
+| 插件     | 描述                                                |
+| :------- | :-------------------------------------------------- |
+| clean    | 构建之后清理目标文件。删除目标目录。                |
+| compiler | 编译 Java 源文件。                                  |
+| surefile | 运行 JUnit 单元测试。创建测试报告。                 |
+| jar      | 从当前工程中构建 JAR 文件。                         |
+| war      | 从当前工程中构建 WAR 文件。                         |
+| javadoc  | 为工程生成 Javadoc。                                |
+| antrun   | 从构建过程的任意一个阶段中运行一个 ant 任务的集合。 |
+
+# 自动化部署
+
+# 模板
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0http://maven.apache.org/maven-v4_0_0.xsd">
-    <!--父项目的坐标。如果项目中没有规定某个元素的值，那么父项目中的对应值即为项目的默认值。 坐标包括group ID，artifact ID和 
-        version。 -->
+    <!--父项目的坐标。如果项目中没有规定某个元素的值，那么父项目中的对应值即为项目的默认值。坐标包括group ID，artifact ID 和 version。 -->
     <parent>
         <!--被继承的父项目的构件标识符 -->
         <artifactId />
@@ -177,8 +875,7 @@ Super POM 是 Maven 默认的 POM，它为所有的 Maven 项目提供了通用�
         <groupId />
         <!--被继承的父项目的版本 -->
         <version />
-        <!-- 父项目的pom.xml文件的相对路径。相对路径允许你选择一个不同的路径。默认值是../pom.xml。Maven首先在构建当前项目的地方寻找父项 
-            目的pom，其次在文件系统的这个位置（relativePath位置），然后在本地仓库，最后在远程仓库寻找父项目的pom。 -->
+        <!-- 父项目的pom.xml文件的相对路径。相对路径允许你选择一个不同的路径。默认值是../pom.xml。Maven首先在构建当前项目的地方寻找父项目的pom，其次在文件系统的这个位置（relativePath位置），然后在本地仓库，最后在远程仓库寻找父项目的pom。 -->
         <relativePath />
     </parent>
     <!--声明项目描述符遵循哪一个POM模型版本。模型本身的版本很少改变，虽然如此，但它仍然是必不可少的，这是为了当Maven引入了新的特性或者其他模型变更的时候，确保稳定性。 -->
@@ -712,14 +1409,11 @@ Super POM 是 Maven 默认的 POM，它为所有的 Maven 项目提供了通用�
             <artifactId>maven-artifact</artifactId>
             <!--依赖的版本号。 在Maven 2里, 也可以配置成版本号的范围。 -->
             <version>3.8.1</version>
-            <!-- 依赖类型，默认类型是jar。它通常表示依赖的文件的扩展名，但也有例外。一个类型可以被映射成另外一个扩展名或分类器。类型经常和使用的打包方式对应， 
-                尽管这也有例外。一些类型的例子：jar，war，ejb-client和test-jar。如果设置extensions为 true，就可以在 plugin里定义新的类型。所以前面的类型的例子不完整。 -->
+            <!-- 依赖类型，默认类型是jar。它通常表示依赖的文件的扩展名，但也有例外。一个类型可以被映射成另外一个扩展名或分类器。类型经常和使用的打包方式对应，尽管这也有例外。一些类型的例子：jar，war，ejb-client和test-jar。如果设置extensions为 true，就可以在 plugin里定义新的类型。所以前面的类型的例子不完整。 -->
             <type>jar</type>
-            <!-- 依赖的分类器。分类器可以区分属于同一个POM，但不同构建方式的构件。分类器名被附加到文件名的版本号后面。例如，如果你想要构建两个单独的构件成 
-                JAR，一个使用Java 1.4编译器，另一个使用Java 6编译器，你就可以使用分类器来生成两个单独的JAR构件。 -->
+            <!-- 依赖的分类器。分类器可以区分属于同一个POM，但不同构建方式的构件。分类器名被附加到文件名的版本号后面。例如，如果你想要构建两个单独的构件成 JAR，一个使用Java 1.4编译器，另一个使用Java 6编译器，你就可以使用分类器来生成两个单独的JAR构件。 -->
             <classifier></classifier>
-            <!--依赖范围。在项目发布过程中，帮助决定哪些构件被包括进来。欲知详情请参考依赖机制。 - compile ：默认范围，用于编译 - provided：类似于编译，但支持你期待jdk或者容器提供，类似于classpath 
-                - runtime: 在执行时需要使用 - test: 用于test任务时使用 - system: 需要外在提供相应的元素。通过systemPath来取得 
+            <!--依赖范围。在项目发布过程中，帮助决定哪些构件被包括进来。欲知详情请参考依赖机制。 - compile ：默认范围，用于编译 - provided：类似于编译，但支持你期待jdk或者容器提供，类似于classpath - runtime: 在执行时需要使用 - test: 用于test任务时使用 - system: 需要外在提供相应的元素。通过systemPath来取得 
                 - systemPath: 仅用于范围为system。提供相应的路径 - optional: 当项目自身被依赖时，标注依赖是否传递。用于连续依赖时使用 -->
             <scope>test</scope>
             <!--仅供system范围使用。注意，不鼓励使用这个元素，并且在新的版本中该元素可能被覆盖掉。该元素为依赖规定了文件系统上的路径。需要绝对路径而不是相对路径。推荐使用属性匹配绝对路径，例如${java.home}。 -->
@@ -774,8 +1468,7 @@ Super POM 是 Maven 默认的 POM，它为所有的 Maven 项目提供了通用�
             </plugin>
         </plugins>
     </reporting>
-    <!-- 继承自该项目的所有子项目的默认依赖信息。这部分的依赖信息不会被立即解析,而是当子项目声明一个依赖（必须描述group ID和 artifact 
-        ID信息），如果group ID和artifact ID以外的一些信息没有描述，则通过group ID和artifact ID 匹配到这里的依赖，并使用这里的依赖信息。 -->
+    <!-- 继承自该项目的所有子项目的默认依赖信息。这部分的依赖信息不会被立即解析,而是当子项目声明一个依赖（必须描述group ID和 artifact ID信息），如果group ID和artifact ID以外的一些信息没有描述，则通过group ID和artifact ID 匹配到这里的依赖，并使用这里的依赖信息。 -->
     <dependencyManagement>
         <dependencies>
             <!--参见dependencies/dependency元素 -->
@@ -827,8 +1520,7 @@ Super POM 是 Maven 默认的 POM，它为所有的 Maven 项目提供了通用�
             <!--显示给用户的，关于移动的额外信息，例如原因。 -->
             <message />
         </relocation>
-        <!-- 给出该构件在远程仓库的状态。不得在本地项目中设置该元素，因为这是工具自动更新的。有效的值有：none（默认），converted（仓库管理员从 
-            Maven 1 POM转换过来），partner（直接从伙伴Maven 2仓库同步过来），deployed（从Maven 2实例部 署），verified（被核实时正确的和最终的）。 -->
+        <!-- 给出该构件在远程仓库的状态。不得在本地项目中设置该元素，因为这是工具自动更新的。有效的值有：none（默认），converted（仓库管理员从 Maven 1 POM转换过来），partner（直接从伙伴Maven 2仓库同步过来），deployed（从Maven 2实例部 署），verified（被核实时正确的和最终的）。 -->
         <status />
     </distributionManagement>
     <!--以值替代名称，Properties可以在整个POM中使用，也可以作为触发条件（见settings.xml配置文件里activation元素的说明）。格式是<name>value</name>。 -->
@@ -836,432 +1528,3 @@ Super POM 是 Maven 默认的 POM，它为所有的 Maven 项目提供了通用�
 </project>
 ```
 
-# 生命周期
-
-## Clean
-
-Maven 的 `clean` 生命周期包含一个阶段，它的主要任务是清理项目，删除之前构建过程生成的输出文件，确保项目处于干净的状态。这个阶段通常在构建之前执行，以防止旧的编译结果和临时文件对构建过程造成影响。
-
-`clean` 生命周期只有一个阶段：
-
-+ **clean**：删除目标目录中的编译输出文件。默认情况下，这个目录是 `target`，包含编译、测试、打包生成的文件以及其他构建生成的临时文件。
-
-执行 `mvn clean` 命令会触发 `clean` 生命周期的`clean`阶段，Maven会清理项目目录下的 `target` 文件夹，删除之前构建过程生成的所有文件。
-
-## Default
-
-Maven 的 `default` 生命周期（也称为 `build` 生命周期）是构建过程中最常用的生命周期，负责将项目从源代码编译成可分发的产品。这个生命周期定义了从验证到部署的一系列阶段，确保了项目的顺利构建和发布。
-
-![img](https://www.runoob.com/wp-content/uploads/2018/09/maven-package-build-phase.png)
-
-`default`生命周期包括以下阶段：
-
-|   阶段   |   处理   |                             描述                             |
-| :------: | :------: | :----------------------------------------------------------: |
-| validate | 验证项目 | 验证项目的正确性，检查项目是否正确配置，所有必要信息是否可用 |
-| compile  | 执行编译 |      编译项目的源代码，将源代码编译成可执行的字节码文件      |
-|   test   |   测试   |        使用适当的单元测试框架（例如 JUnit）运行测试。        |
-| package  |   打包   |      将编译后的代码打包成可分发的格式，例如 JAR 或 WAR       |
-|  verify  |   检查   |  对集成测试的结果进行检查，以保证质量达标，通常用于集成测试  |
-| install  |   安装   |  将项目的构建结果安装到本地 Maven 仓库中，以供其他项目使用   |
-|  deploy  |   部署   |   拷贝最终的工程包到远程仓库中，以共享给其他开发人员和工程   |
-
-默认情况下，执行 `mvn install` 命令会触发 `default` 生命周期的所有阶段（包括其他未在上面罗列的生命周期阶段），按照上述顺序依次执行。但可以针对特定阶段执行单个阶段，比如 `mvn compile` 只会执行 `compile` 阶段。
-
-## Site
-
-Maven 的 `site` 生命周期主要关注项目文档和站点的生成，是用于创建项目站点文档的生命周期。
-
-这个生命周期包含了以下两个主要阶段：
-
-+ **site**：该阶段用于生成项目文档和站点信息。它通常包括生成文档、报告和站点相关的内容，比如生成文档、API 文档、静态站点内容等。这个阶段的执行结果会存放在 `target/site` 目录下。
-+ **deploy-site**：`site` 阶段生成的站点信息，使用 `deploy-site` 阶段可以将生成的站点信息发布到远程服务器，以便共享项目文档。这个阶段通常会将站点发布到远程服务器的特定位置，让团队或用户可以访问项目文档和信息。
-
-通过执行 `mvn site` 命令，Maven 会按照 `site` 生命周期的定义生成项目的站点文档，包括各种文档和报告。这有助于项目团队和用户了解项目的状态、文档、API 等信息。
-
-# 命令
-
-+ **Lifecycle（生命周期）：** Maven 中定义了一系列阶段，按顺序执行以完成构建过程。例如，`clean`、`compile`、`test`、`package`、`install` 等。
-+ **Phase（阶段）：** 生命周期中的某个具体阶段，代表了构建过程中的一个步骤。每个生命周期有多个阶段。
-+ **Goal（目标）：** 描述了 Maven 插件的功能，用于执行特定任务。每个阶段都包含了一个或多个目标。
-
-## 常用命令
-
-+ **`mvn clean`：** 清理项目，删除目标文件（如编译后的类文件、打包文件等）。
-+ **`mvn compile`：** 编译项目源代码。
-+ **`mvn test`：** 运行项目中的测试。
-+ **`mvn package`：** 将编译后的代码打包，生成可分发的文件，比如 JAR、WAR。
-+ **`mvn install`：** 将打包好的文件安装到本地 Maven 仓库中，供其他项目使用。
-+ **`mvn deploy`：** 将构建好的文件部署到远程仓库，用于共享和分发。
-
-##  命令使用
-
-+ **命令结构：** `mvn [goal]`，其中 `[goal]` 是指定的目标或阶段。
-+ **组合命令：** 可以将多个命令组合在一起使用，例如 `mvn clean package`，以清理项目并打包。
-+ **Profiles（配置文件）：** 使用 `-P` 参数指定某个配置文件。比如 `mvn clean install -P production`，表示使用生产环境的配置进行构建。
-+ **帮助命令：** `mvn --help` 或 `mvn -h`，用于查看 Maven 命令的帮助信息。
-
-# 目录结构
-
-```
-my-project
-|-- pom.xml
-|-- src
-|   |-- main
-|   |   |-- java         # Java源代码
-|   |   |-- resources    # 资源文件
-|   |-- test
-|       |-- java         # 测试源代码
-|       |-- resources    # 测试资源文件
-|-- target               # 构建生成的目标文件
-|-- .mvn                 # Maven wrapper配置（可选）
-|-- .gitignore           # Git忽略文件配置
-|-- .editorconfig        # 编辑器配置（可选）
-```
-
-+ **`pom.xml`：** Maven 项目的核心配置文件，包含项目的基本信息、依赖关系、插件配置等。
-+ **`src` 目录：** 存放项目的源代码和资源文件。
-  + **`main` 目录：**
-    + **`java`：** 存放主要的 Java 源代码。
-    + **`resources`：** 存放主要的资源文件，如配置文件等。
-  + **`test` 目录：**
-    + **`java`：** 存放测试用的 Java 源代码。
-    + **`resources`：** 存放测试用的资源文件。
-+ **`target` 目录：** 存放编译生成的目标文件，包括生成的 JAR 或 WAR 文件等。
-+ **`.mvn` 目录（可选）：** Maven wrapper的配置目录，用于支持项目的独立构建，无需全局安装 Maven。
-+ **`.gitignore` 文件：** Git 版本控制忽略配置文件，定义哪些文件不会被 Git 跟踪。
-+ **`.editorconfig` 文件（可选）：** 编辑器配置文件，定义不同编辑器的一致性配置，以确保团队协作中的一致性。
-
-# 配置
-
-构建配置文件是一系列的配置项的值，可以用来设置或者覆盖 Maven 构建默认值。
-
-使用构建配置文件，你可以为不同的环境，比如说生产环境（Production）和开发（Development）环境，定制构建方式。
-
-配置文件在 pom.xml 文件中使用 activeProfiles 或者 profiles 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 POM，并且用来给参数设定不同的目标环境（比如说，开发（Development）、测试（Testing）和生产环境（Production）中数据库服务器的地址）。
-
-## 类型
-
-1. **项目级（Per Project）**：
-   + **位置：** 定义在项目的 POM 文件 `pom.xml` 中。
-   + 这种配置是针对单个项目的，放置于项目POM文件中。它允许针对特定项目定义构建和依赖管理的设置，例如编译器版本、依赖库版本等。
-2. **用户级 （Per User）**：
-   + **位置：** 定义在Maven的用户级设置xml文件中 (`%USER_HOME%/.m2/settings.xml`)。
-   + 这种配置是针对特定用户的。它允许在用户级别设置Maven的行为，比如镜像设置、代理设置、服务器凭证等。这些配置对于所有项目都是通用的。
-3. **全局（Global）**：
-   + **位置：** 定义在Maven全局的设置xml文件中 (`%M2_HOME%/conf/settings.xml`)。
-   + 这种配置是全局性的，适用于所有用户和项目。通常由系统管理员或者Maven安装者设置，用于配置全局行为，例如默认的仓库地址、插件组、全局性的代理设置等。
-
-用户级和全局配置的 `setting.xml` 文件中，根标签为 `<settings>` ，项目级中的 `pom.xml` 根标签为 `<project>` 。
-
-## 全局配置
-
-Maven 使用 `settings.xml` 作为全局配置文件，它包含了一些 Maven 运行所需的全局设置和配置选项。这个文件通常位于 `Maven_Home/conf` 目录下。
-
-+ **配置仓库（Repository）信息**：指定 Maven 从哪里下载依赖，以及将依赖上传到哪个仓库。
-+ **设置全局属性（Global Properties）**：配置全局使用的属性，比如编码、Maven 版本等。
-+ **配置代理服务器（Proxy Server）**：允许在需要时使用代理服务器来访问远程仓库。
-+ **定义Maven Profiles**：可以针对不同的环境设置不同的配置。
-
-### 本地仓库路径
-
-这个设置指定了Maven在本地存储依赖库的位置。这个本地仓库路径配置项允许你指定Maven在本地文件系统中存储依赖项的位置。
-
-```xml
-<localRepository>/path/to/your/local/repo</localRepository>
-```
-
-这个配置指定了本地仓库的路径，默认是 `~/.m2/repository`。
-
-### 代理配置
-
-通过配置代理来让 Maven 能够通过代理服务器访问远程仓库。这在你的网络环境中需要代理才能访问外部资源时非常有用。
-
-```xml
-<proxies>
-  <proxy>
-    <id>example-proxy</id>
-    <active>true</active>
-    <protocol>http</protocol>
-    <host>proxy.example.com</host>
-    <port>8080</port>
-    <!-- 可选的用户名和密码，如果需要认证访问 -->
-    <!-- <username>your_username</username>
-      <password>your_password</password> -->
-    <!-- 可选的非代理主机列表 -->
-    <!-- <nonProxyHosts>local.net|some.host.com</nonProxyHosts> -->
-  </proxy>
-</proxies>
-```
-
-+ `<id>`：代理的唯一标识符。
-+ `<active>`：是否激活代理配置。
-+ `<protocol>`：代理服务器的协议，例如 `http` 或 `https`。
-+ `<host>`：代理服务器的主机名或 IP 地址。
-+ `<port>`：代理服务器的端口号。
-+ `<username>` 和 `<password>`：可选项，如果代理需要认证，可以提供用户名和密码。
-+ `<nonProxyHosts>`：可选项，用于指定不需要使用代理访问的主机列表。
-
-### 服务器凭证
-
-配置服务器凭证来访问需要身份验证的远程仓库或服务。这些凭证可以用于访问私有的 Maven 仓库或者其他需要身份验证的远程资源。
-
-```xml
-<servers>
-  <server>
-    <id>example-repo</id>
-    <username>your_username</username>
-    <password>your_password</password>
-    <!-- 可选的私钥/公钥认证 -->
-    <!-- <privateKey>/path/to/privatekey</privateKey>
-      <passphrase>your_passphrase</passphrase> -->
-  </server>
-</servers>
-```
-
-+ `<id>`：服务器的唯一标识符，用于关联服务器和凭证。
-+ `<username>` 和 `<password>`：用于验证的用户名和密码。
-+ `<privateKey>` 和 `<passphrase>`：可选项，如果服务器使用 SSH 密钥认证，可以指定私钥的路径和解密密钥。
-
-### 镜像设置
-
-可以配置镜像来加速构建过程并优化下载依赖项的速度。镜像定义了 Maven 应该从哪个远程仓库获取构建所需的资源。
-
-```xml
-<mirrors>
-  <mirror>
-    <id>mirror_id</id>
-    <mirrorOf>central</mirrorOf>
-    <url>https://maven.example.com/repository/maven-central/</url>
-    <blocked>false</blocked>
-    <mirrorOfLayouts>default,legacy</mirrorOfLayouts>
-  </mirror>
-</mirrors>
-```
-
-+ `<mirror>`：镜像配置的起始标签。
-+ `<id>`：镜像的唯一标识符。
-+ `<mirrorOf>`：指定需要镜像的远程仓库。`central` 通常指代 Maven 中央仓库。可以是一个逗号分隔的列表，指定多个仓库。
-+ `<url>`：镜像仓库的地址。
-+ `<blocked>`：标志该镜像是否被阻止（`true` 或 `false`）。如果设置为 `true`，Maven 不会使用该镜像。
-+ `<mirrorOfLayouts>`：指定镜像匹配的仓库布局。默认情况下，使用 `default,legacy`。
-
-#### 常用镜像
-
-**阿里云**
-
-```xml
-<mirror>
-    <id>aliyunmaven</id>
-    <mirrorOf>*</mirrorOf>
-    <name>阿里云公共仓库</name>
-    <url>https://maven.aliyun.com/repository/public</url>
-</mirror>
-```
-
-**华为云**
-
-```xml
-<mirror>
-　　<id>huaweicloud</id>
-   <name>华为云 maven</name>
-   <mirrorOf>*</mirrorOf>
-   <url>https://mirrors.huaweicloud.com/repository/maven/</url>
-</mirror>
-```
-
-**腾讯云**
-
-```xml
-<mirror>
-　　<id>nexus-tencentyun</id>
-　　<mirrorOf>*</mirrorOf>
-　　<name>Nexus tencentyun</name>
-　　<url>http://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
-</mirror>
-```
-
-### Profile 配置
-
-在 Maven 的 `settings.xml` 或者项目的 `pom.xml` 文件中，可以使用 `profiles` 元素定义不同的构建配置文件，以便根据不同的环境需求激活特定的配置。
-
-```xml
-<profiles>
-  <profile>
-    <id>development</id>
-    <activation>
-      <activeByDefault>true</activeByDefault>
-    </activation>
-    <properties>
-      <!-- 定义特定于开发环境的属性 -->
-      <env>development</env>
-      <database.url>jdbc:mysql://localhost:3306/dev_db</database.url>
-    </properties>
-  </profile>
-
-  <profile>
-    <id>production</id>
-    <properties>
-      <!-- 定义特定于生产环境的属性 -->
-      <env>production</env>
-      <database.url>jdbc:mysql://production-server/db</database.url>
-    </properties>
-  </profile>
-</profiles>
-```
-
-+ `<profiles>`：用于定义不同的构建配置文件。
-+ `<profile>`：每个配置文件的起始标签。
-+ `<id>`：配置文件的唯一标识符。
-+ `<activation>`：定义何时激活配置文件的规则。
-  + `<activeByDefault>`：如果设置为 `true`，表示默认激活该配置文件。
-+ `<properties>`：配置文件中的属性设置。
-  + 这里的属性可以根据环境需求设置不同的值，比如数据库连接的 URL、环境标识等。
-
-Profile 可以在不同环境下使用不同的配置，可以设置默认激活的 profile，或根据不同条件激活 profile。
-
-### 插件组
-
-`pluginGroups` 元素是 Maven 设置文件 `settings.xml` 中的一个部分，用于定义自定义插件组。
-
-当使用 Maven 执行构建时，Maven 会在本地仓库中查找并下载所需的插件。通常情况下，Maven 会从 Maven 中央仓库（Central Repository）下载插件。
-
-当可能需要使用自己或组织内部的自定义插件。在这种情况下，你可以使用 `pluginGroups` 元素配置自定义的插件组。
-
-```xml
-<pluginGroups>
-  <pluginGroup>com.example.myplugins</pluginGroup>
-  <pluginGroup>org.company.internalplugins</pluginGroup>
-</pluginGroups>
-```
-
-+ `<pluginGroup>`：插件组的名称，即插件坐标的前缀。可以指定多个插件组。
-
-通过这种配置，当你在项目的 POM 文件中使用插件时，Maven 将首先查找这些自定义插件组，然后再从 Maven 中央仓库中查找。这样，你就可以方便地使用自己或组织内部的自定义插件，而不必每次都指定完整的插件坐标。
-
-## 项目配置
-
-### 基本配置
-
-+ **project** - `project` 是 pom.xml 中描述符的根。
-+ **modelVersion** - `modelVersion` 指定 pom.xml 符合哪个版本的描述符。maven 2 和 3 只能为 4.0.0。
-
-一般 jar 包被识别为： `groupId:artifactId:version` 的形式。
-
-```xml
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-
-  <groupId>org.codehaus.mojo</groupId>
-  <artifactId>my-project</artifactId>
-  <version>1.0</version>
-  <packaging>war</packaging>
-</project>
-```
-
-###  依赖配置
-
-### 模块配置
-
-### 属性配置
-
-属性列表。定义的属性可以在 pom.xml 文件中任意处使用。使用方式为 `${propertie}` 。
-
-```xml
-<properties>
-  <maven.compiler.source>1.7<maven.compiler.source>
-  <maven.compiler.target>1.7<maven.compiler.target>
-  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-</properties>
-```
-
-### 构建配置
-
-
-
-### 插件配置
-
-在 Maven 中，插件是执行构建过程中最核心的组件之一。插件配置允许开发者指定在构建过程中运行的插件以及这些插件的行为。
-
-```xml
-<build>
-  <plugins>
-    <!-- 插件的配置 -->
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-compiler-plugin</artifactId>
-      <version>3.8.1</version>
-      <configuration>
-        <!-- 插件的配置项 -->
-        <source>1.8</source>
-        <target>1.8</target>
-        <encoding>UTF-8</encoding>
-      </configuration>
-    </plugin>
-  </plugins>
-</build>
-```
-
-+ `<build>`：用于定义项目构建相关配置。
-+ `<plugins>`：插件配置的容器。
-+ `<plugin>`：插件的配置。
-  + `<groupId>`、`<artifactId>`、`<version>`：插件的坐标信息，用于确定具体的插件。
-  + `<configuration>`：用于配置插件的具体选项。
-    + 在这个例子中，`maven-compiler-plugin` 插件被配置为使用 Java 1.8 版本的编译源代码。
-
-**插件配置的常见选项**
-
-+ `<groupId>`、`<artifactId>`、`<version>`：插件的坐标信息，指定要使用的插件。
-+ `<executions>`：指定插件的执行时机和顺序。
-+ `<configuration>`：插件的具体配置参数，取决于插件本身支持的配置项。
-+ `<dependencies>`：插件运行所需要的依赖配置。
-
-### 项目信息
-
-### 环境配置
-
-
-
-## 构建配置
-
-Maven的构建配置文件可以通过多种方式激活。
-
-+ 使用命令控制台输入显式激活。
-+ 通过 maven 设置。
-+ 基于环境变量（用户或者系统变量）。
-+ 操作系统设置（比如说，Windows系列）。
-+ 文件的存在或者缺失。
-
-其中在src/main/resources文件夹下有三个用于测试文件：
-
-| 文件名              | 描述                                 |
-| :------------------ | :----------------------------------- |
-| env.properties      | 如果未指定配置文件时默认使用的配置。 |
-| env.test.properties | 当测试配置文件使用时的测试配置。     |
-| env.prod.properties | 当生产配置文件使用时的生产配置。     |
-
-**注意：**这三个配置文件并不是代表构建配置文件的功能，而是用于本次测试的目的；比如，我指定了构建配置文件为 prod 时，项目就使用 env.prod.properties文件。
-
-**注意：**下面的例子仍然是使用 AntRun 插件，因为此插件能绑定 Maven 生命周期阶段，并通过 Ant 的标签不用编写一点代码即可输出信息、复制文件等，经此而已。其余的与本次构建配置文件无关。
-
-### 1、配置文件激活
-
-profile 可以让我们定义一系列的配置信息，然后指定其激活条件。这样我们就可以定义多个 profile，然后每个 profile 对应不同的激活条件和配置信息，从而达到不同环境使用不同配置信息的效果。
-
-以下实例，我们将 maven-antrun-plugin:run 目标添加到测试阶段中。这样我们可以在不同的 profile 中输出文本信息。我们将使用 pom.xml 来定义不同的 profile，并在命令控制台中使用 maven 命令激活 profile。
-
-**注意：****构建配置文件**采用的是 **<profiles>** 节点。
-
-**说明：**上面新建了三个 **<profiles>**，其中 **<id>** 区分了不同的 **<profiles>** 执行不同的 AntRun 任务；而 AntRun 的任务可以这么理解，AntRun 监听 test 的 Maven 生命周期阶段，当 Maven 执行 test 时，就触发了 AntRun 的任务，任务里面为输出文本并复制文件到指定的位置；而至于要执行哪个 AntRun 任务，此时**构建配置文件**起到了传输指定的作用，比如，通过命令行参数输入指定的 **<id>**。
-
-执行命令：
-
-```
-mvn test -Ptest
-```
-
-提示：第一个 test 为 Maven 生命周期阶段，第 2 个 test 为**构建配置文件**指定的 <id> 参数，这个参数通过 **-P** 来传输，当然，它可以是 prod 或者 normal 这些由你定义的**<id>**。
