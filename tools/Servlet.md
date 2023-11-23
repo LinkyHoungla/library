@@ -17,6 +17,34 @@ Servlets 是 Java Web 应用程序的核心组件，是 Java 编写的服务器�
 
 Servlet 本身不能独立运行，需要在一个 Web 应用中运行的，一个常见的 Web 应用是 Tomcat 。
 
+## 执行流程
+
+![image-20230204151930520](assets/b0fd8c4e9f7cb955a09b71423d0bd239.png)
+
+当浏览器发出 `http://localhost:8080/servlet-project/demo` 请求时，这个请求大致分为三个主要部分：
+
+1. 定位服务器和项目：
+
+- **根据 `http://localhost:8080` 找到 Tomcat 服务器。**
+- **进一步在 Tomcat 中找到部署的名为 `servlet-project` 的 Web 项目。**
+
+2. 寻找具体的 Servlet：
+
+- **在项目中根据 `demo` 找到要访问的具体 Servlet。**
+- **这里使用了注解配置了 Servlet 的访问路径。**
+
+3. Servlet 的调用和响应生成：
+
+- **Web 服务器 Tomcat 根据请求创建一个名为 ServletDemo 的 Servlet 对象。**
+- **Servlet 对象的 `service()` 方法被自动调用。**
+- **`service()` 方法执行后向客户端浏览器发送响应数据。**
+
+ 数据交互与 Servlet 类：
+
+- **`ServletRequest` 封装了请求数据。**
+- **`ServletResponse` 封装了响应数据。**
+- **通过这两个类的对象，实现了前后端的数据交互。**
+
 # 架构
 
 ![Servlet 架构](D:\Repository\Typora\servlet-arch.jpg)
@@ -116,7 +144,7 @@ Tomcat 启动 web 项目时，web 容器就会首先加载 web.xml 文件。
 
 ### `<distributable>`
 
-`<distributable>`标签是web.xml文件中的一个可选标签，用于指示Web应用程序是否支持分布式部署。
+`<distributable>` 标签是 web.xml 文件中的一个可选标签，用于指示 Web 应用程序是否支持分布式部署。
 
 **作用**
 
@@ -137,7 +165,7 @@ Tomcat 启动 web 项目时，web 容器就会首先加载 web.xml 文件。
 
 **作用**
 
-- **全局参数配置：** `<context-param>` 标签允许在整个Web应用程序中定义全局参数，这些参数在整个应用程序中可用，包括 Servlet、JSP、过滤器等。
+- **全局参数配置：** `<context-param>` 标签允许在整个 Web 应用程序中定义全局参数，这些参数在整个应用程序中可用，包括 Servlet、JSP、过滤器等。
 - **灵活配置：** 这些参数可以包含各种类型的信息，如数据库连接信息、全局设置、第三方API密钥等。
 
 **子标签**
@@ -557,6 +585,55 @@ URL 路径的匹配规则：
 </web-app>
 ```
 
+## 注解
+
+Servlet 3.0 引入了注解支持，使得 Servlet 的配置更加简洁和灵活。
+
+在 Servlet 3.0 及以上版本中，Servlet 可以完全通过注解来进行配置，从而不再需要显式地在 `web.xml` 中配置 Servlet、Filter、Listener 等组件。
+
+- **简化配置：** 替代了传统的在 web.xml 中配置 Servlet 的方式，减少了配置文件的复杂性。
+- **提高可读性：** 注解直观地展示了 Servlet 的作用和映射路径，方便阅读和理解。
+
+**常用的注解**：
+
+- **`@WebServlet`：** 定义一个 Servlet。常用属性包括 `name`（Servlet 名称）、`urlPatterns`（Servlet 的 URL 映射路径）、`initParams`（初始化参数）等。
+
+  ```java
+  @WebServlet(name = "DemoServlet", urlPatterns = "/demo")
+  public class DemoServlet extends HttpServlet {
+      // Servlet 实现
+  }
+  ```
+
+- **`@WebInitParam`：** 在 `@WebServlet` 中使用，用于定义初始化参数。
+
+  ```java
+  @WebServlet(name = "DemoServlet", urlPatterns = "/demo", initParams = {
+      @WebInitParam(name = "paramName", value = "paramValue")
+  })
+  public class DemoServlet extends HttpServlet {
+      // Servlet 实现
+  }
+  ```
+
+- **`@WebFilter`：** 定义一个过滤器，可以用于对 Servlet 请求进行拦截和处理。
+
+  ```java
+  @WebFilter(filterName = "MyFilter", urlPatterns = "/somePath/*")
+  public class MyFilter implements Filter {
+      // 过滤器实现
+  }
+  ```
+
+- **`@WebListener`：** 标记一个类为监听器，用于监听 Web 应用中的事件。
+
+  ```java
+  @WebListener
+  public class MyListener implements ServletContextListener {
+      // 监听器实现
+  }
+  ```
+
 # 生命周期
 
 ![Servlet 生命周期](D:\Repository\Typora\Servlet-LifeCycle.jpg)
@@ -803,4 +880,20 @@ public void destroy() {
 }
 ```
 
+# 容器
+
+ Servlet 容器是用于管理和执行 Servlet 生命周期的软件实体。它负责加载、实例化、初始化和销毁 Servlet，同时管理 Servlet 的请求和响应过程。
+
+**主要功能**
+
+- **Servlet 生命周期管理：** 负责控制 Servlet 的生命周期，包括初始化、请求处理和销毁。
+- **请求处理：** 接收客户端的请求并将其路由到相应的 Servlet 进行处理。容器还负责将响应返回给客户端。
+- **多线程支持：** Servlet 容器是多线程的，能够同时处理多个请求，并为每个请求分配一个线程，提高并发处理能力。
+
+**常见容器**
+
+- **Tomcat：** Apache 开发的开源 Servlet 容器，被广泛应用于 Java Web 开发中。
+- **Jetty：** Eclipse 基金会维护的开源 Servlet 容器，具有轻量级和快速启动的特点。
+- **Undertow：** 由 JBoss 开发的高性能 Servlet 容器，专注于性能和低资源消耗。
+- **WebLogic、WebSphere：** 商业级 Servlet 容器，提供了更多企业级的功能和支持。
 
