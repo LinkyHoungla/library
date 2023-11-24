@@ -211,6 +211,9 @@ Tomcat 启动 web 项目时，web 容器就会首先加载 web.xml 文件。
 - `<init-param>` 标签是可选的，用于提供 Servlet 的初始化参数。这些参数可以在 Servlet 中通过 `getInitParameter("paramName")` 方法获取。
 - `<load-on-startup>` 标签用于在 `web.xml` 文件中配置 Servlet 的启动顺序，指定 Servlet 在容器启动时就进行初始化，并指定初始化的顺序。
   - 标签中的值表示了 Servlet 的加载顺序，通常为一个整数。数值越小，启动顺序越靠前。如果 `<load-on-startup>` 设置为0或者没有设置，则表示在需要时（即第一次请求该 Servlet）才初始化，而不是在容器启动时就进行初始化。
+- async-supported是servlet 3.0后推出的新特性：作用是支持异步处理。
+  - 如果你的web.xml是2.5，会报错
+
 
 ```xml
 <servlet>
