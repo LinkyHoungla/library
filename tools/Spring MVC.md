@@ -4,6 +4,12 @@ Spring Web MVC 是基于 Servlet API 构建的原始 Web 框架，从一开始�
 
 与 Spring Web MVC 并行，Spring Framework 5.0 引入了一个反应式堆栈 Web 框架，其名称“Spring WebFlux”也基于其源模块 ( [`spring-webflux`](https://github.com/spring-projects/spring-framework/tree/main/spring-webflux))。本章介绍 Spring Web MVC。
 
+# 父子容器
+
+使用父子容器时，子容器的mapper路径需要为/，不然无法匹配
+
+关于controller 的配置不能定义在父容器，例如convert，信息转换等
+
 # 原理
 
 ## DispatcherServlet
