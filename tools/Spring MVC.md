@@ -152,6 +152,217 @@ public class MyWebAppInitializer extends AbstractAnnotationConfigDispatcherServl
 | [`MultipartResolver`](https://springdoc.cn/spring/web.html#mvc-multipart) | 在一些 multipart 解析库的帮助下，解析一个 multipart 请求（例如，浏览器表单文件上传）的抽象。参见 [Multipart 解析器](https://springdoc.cn/spring/web.html#mvc-multipart)。 |
 | [`FlashMapManager`](https://springdoc.cn/spring/web.html#mvc-flash-attributes) | 存储和检索 "输入" 和 "输出" `FlashMap`，可用于将属性从一个请求传递到另一个请求，通常跨越重定向。见 [Flash Attributes](https://springdoc.cn/spring/web.html#mvc-flash-attributes)。 |
 
+# 数据绑定
+
+对于你提到的这段代码：
+
+```java
+@GetMapping("/len")
+ApiResponse<Test> getTime(Test name) {
+    return ApiResponse.success(name);
+}
+```
+
+在 Spring MVC 中，`@GetMapping` 注解对应着 HTTP 的 GET 请求，而方法中的 `Test name` 参数表示将请求路径中的参数自动绑定到 `Test` 类型的对象 `name` 上。
+
+Spring MVC 会尝试根据请求路径中的参数名和 `Test` 类型的字段名进行自动匹配，并将请求参数映射到 `Test` 类型的对象上。这种自动的请求参数映射到对象的过程是 Spring MVC 的一个特性，它利用了 JavaBean 的规范，通过对象的 setter 方法或者字段来自动匹配请求参数。
+
+假设请求路径为 `/len?param1=value1&param2=value2`，如果 `Test` 类型中包含了名为 `param1` 和 `param2` 的字段，并提供了相应的 setter 方法或公共字段，Spring MVC 就会尝试将请求参数 `param1` 和 `param2` 自动映射到 `Test` 类型的对象上。
+
+这种行为是 Spring MVC 默认的参数绑定方式，如果请求路径中的参数名与对象的字段名一致，Spring MVC 就会尝试自动绑定。因此，在你的代码中，GET 请求路径中的参数能够被正确地映射到 `Test` 对象上。
+
+这个知识点涉及到 Spring MVC 中的参数绑定和请求处理的部分。具体来说，这属于 Spring MVC 的请求参数绑定功能。
+
+Spring MVC 的请求参数绑定是框架的一个特性，它可以将请求中的参数自动映射到控制器方法的参数上，甚至是映射到方法中的自定义对象上。这样的功能使得开发者可以在控制器方法中直接使用对象来处理请求参数，减少了手动处理请求参数的繁琐工作。
+
+在你的示例中，通过在控制器方法的参数中直接使用 `Test name` 这样的对象，Spring MVC 会尝试根据请求路径中的参数名来自动映射参数到 `Test` 对象的属性上，从而简化了获取请求参数的过程。
+
+这种请求参数自动绑定到方法参数或对象的功能属于 Spring MVC 的请求处理和参数解析的一部分。
+
+当客户端发起一个 HTTP 请求时，其中的参数通常包含在 URL 中（对于 GET 请求）或者请求体中（对于 POST、PUT 等请求）。在 Spring MVC 中，有一个参数解析器（Argument Resolver）的机制，能够将这些请求参数映射到控制器方法的参数上，这就是请求参数绑定。
+
+### 请求参数绑定的过程：
+
+1. **控制器方法定义：** 在控制器类的方法中，你可以直接声明方法参数来接收请求中的参数。比如：
+
+   ```
+   javaCopy code@GetMapping("/example")
+   public String handleRequest(@RequestParam("param1") String param1, @RequestParam("param2") int param2) {
+       // 使用 param1 和 param2 处理请求
+   }
+   ```
+
+   这种方式下，`@RequestParam` 注解将会尝试根据参数名（比如 "param1"、"param2"）将请求参数映射到方法参数上。
+
+2. **对象参数接收：** 除了直接接收单个参数外，你也可以使用对象来接收多个相关参数。比如：
+
+   ```
+   javaCopy codepublic class MyRequestObject {
+       private String param1;
+       private int param2;
+       // Getters and setters
+   }
+   
+   @GetMapping("/example")
+   public String handleRequest(MyRequestObject requestObject) {
+       // 使用 requestObject 中的参数
+   }
+   ```
+
+   在这个例子中，Spring MVC 会尝试将请求参数自动映射到 `MyRequestObject` 类的属性中，从而实现请求参数到对象的自动转换。
+
+3. **自动映射原理：** Spring MVC 使用了 JavaBean 的规范来进行参数绑定。对于方法参数中的对象，它会寻找对象中的字段或者对应的 setter 方法，并尝试将请求参数根据名称自动映射到这些字段或者方法上。
+
+4. **绑定方式：** 请求参数绑定可以通过注解（比如 `@RequestParam`、`@PathVariable`、`@RequestBody`）或者直接声明方法参数为对象的方式来实现。Spring MVC 在后台根据请求参数名和方法参数或对象的字段名进行匹配，自动进行参数的绑定。
+
+在 Spring MVC 中，请求参数绑定的底层原理涉及到处理器适配器（HandlerAdapter）和处理器方法参数解析器（HandlerMethodArgumentResolver）。
+
+### 底层原理：
+
+1. **处理器适配器：** 当一个请求到达时，处理器适配器负责将请求映射到对应的控制器方法上。处理器适配器选择合适的处理器（即控制器方法），并调用处理器来处理请求。
+2. **处理器方法参数解析器：** 处理器方法参数解析器负责将请求中的参数解析并映射到控制器方法的参数上。Spring MVC 中有多种内置的参数解析器，包括用于处理请求参数的 `RequestParamMethodArgumentResolver`、用于处理路径变量的 `PathVariableMethodArgumentResolver` 等。
+3. **参数解析流程：** 当请求到达时，处理器适配器选择相应的处理器方法，并调用参数解析器来解析方法中的参数。参数解析器会根据方法参数的类型和注解等信息，尝试从请求中获取对应的参数值，并将其映射到方法参数中。比如，`@RequestParam` 注解告诉 Spring MVC 使用请求参数来填充方法参数，`@PathVariable` 则用于路径变量的映射，而对象参数则会自动尝试将请求参数映射到对象的属性中。
+4. **参数绑定策略：** Spring MVC 的参数绑定策略基于 JavaBean 规范。当方法参数为对象时，Spring MVC 会查找对象中的属性或对应的 setter 方法，并尝试将请求参数与属性名进行匹配，从而实现参数的自动绑定。
+5. **自定义参数解析器：** 你也可以实现自己的参数解析器来处理特定的参数映射逻辑。通过实现 `HandlerMethodArgumentResolver` 接口，你可以定义自定义的参数解析器，并注册到 Spring MVC 中，使得 Spring MVC 能够根据你的需求来解析特定类型的参数。
+
+请求参数绑定和 Jackson 的消息转换属于 Spring MVC 的不同部分，但它们之间有一定的联系。
+
++ **请求参数绑定：** 是 Spring MVC 中负责将请求中的参数映射到控制器方法参数上的机制。它根据方法参数的类型、注解以及请求中的参数名进行匹配，并尝试将参数值映射到方法参数或对象的属性上。
++ **Jackson 的消息转换：** 则是指 Spring MVC 中利用 Jackson 库来实现请求和响应中 JSON 格式数据与 Java 对象之间的转换。它负责将请求体中的 JSON 数据转换为 Java 对象，或者将 Java 对象转换为 JSON 数据返回给客户端。
+
+这两个功能是相对独立的，但在某些场景下可能会有联系。比如，当你使用对象来接收请求参数时，请求参数绑定会尝试将请求参数的字符串值转换为对象属性对应的类型。在这个过程中，Spring MVC 可能会使用内置的类型转换器来将参数字符串转换为对应的类型。如果遇到无法自动转换的情况，可以自定义类型转换器来处理。
+
+所以，请求参数绑定并不直接依赖于 Jackson 的消息转换机制，但在使用对象接收请求参数时，可能会涉及到类型转换的问题，此时可以考虑使用自定义类型转换器来解决。同时，Jackson 的消息转换主要负责 JSON 数据和 Java 对象之间的转换，不直接参与请求参数的绑定。
+
+# 类型转换
+
+**上面注册的默认全局ConversionService仅适用于`BeanWarpper`，对于`Spring MVC的DataBinder`无效，因为DataBinder初始化并在绑定ConversionService时不会使用`AbstractBeanFactory的conversionService属性`，DataBinder的ConversionService有另外的配置方法：**
+
+1. 对于`XML配置`来说，配置`<mvc:annotation-driven>`标签即表示会默认使用一个`DefaultFormattingConversionService`实例，可以通过`conversion-service`属性指定某个`ConversionService`实例。
+2. 对于`JavaConfig配置`来说，通过加入`@EnableWebMvc注解`也能注册一个默认的`DefaultFormattingConversionService`，而注册一个`id为mvcConversionService的ConversionService`即表示替代这个默认的`DefaultFormattingConversionService`。
+3. **如果没有这两种配置，那么DataBinder同样没有ConversionService。**
+
+如下配置，使得BeanWarpper和DataBinder都是用同一个conversionService：
+
+```xml
+xml复制代码<!--conversion-service属性指定在字段绑定期间用于类型转换的转换服务的bean名称。 -->
+<!--如果不指定，则表示注册默认DefaultFormattingConversionService-->
+<mvc:annotation-driven conversion-service="conversionService"/>
+
+<!--配置类型转换服务工厂，它会默认创建DefaultConversionService，并且支持注入自定义类型转换器之外-->
+<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+    <property name="converters">
+        <set>
+            <!--注入自定义转换器实例-->
+            <ref bean="stringToDateConverter"/>
+        </set>
+    </property>
+</bean>
+```
+
+关于`DefaultFormattingConversionService`，我们下面会介绍！
+
+```xml
+<!--conversion-service属性指定在字段绑定期间用于类型转换的转换服务的bean名称。 -->
+<!--如果不指定，则表示注册默认DefaultFormattingConversionService-->
+<mvc:annotation-driven conversion-service="conversionService"/>
+
+<!--配置工厂，它会默认创建DefaultFormattingConversionService，并且支持注入自定义converters和formatters-->
+<!--如果将它命名为conversionService，那么BeanWrapper和DataBinder 都共用此conversionService-->
+<bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+    <!--注入自定义formatters，支持Formatter 和 AnnotationFormatterFactory的实例-->
+    <property name="formatters">
+        <set/>
+    </property>
+    <!--注入自定义converters，支持Converter、ConverterFactory、GenericConverter的实例-->
+    <property name="converters">
+        <set/>
+    </property>
+    <!--注入自定义的formatterRegistrars-->
+    <property name="formatterRegistrars">
+        <set>
+            <ref bean="customFormatterRegistrar"/>
+        </set>
+    </property>
+</bean>
+```
+
+**在解析时，首先使用注册的局部PropertyEditor来解析，然后在使用全局的conversionService来解析！**
+
+如果你希望能够处理多种不同的时间格式，可以考虑使用 Spring 的 `@DateTimeFormat` 注解配合自定义的全局转换器来实现。下面是一个示例：
+
+首先，创建一个自定义的全局转换器实现 `Converter<String, LocalDateTime>` 接口，用于处理多种时间格式：
+
+```java
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
+
+@Component
+public class StringToLocalDateTimeConverter implements Converter<String, LocalDateTime> {
+
+    private final List<DateTimeFormatter> formatters = Arrays.asList(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            // Add more formats if needed
+    );
+
+    @Override
+    public LocalDateTime convert(String source) {
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                return LocalDateTime.parse(source, formatter);
+            } catch (Exception ignored) {
+            }
+        }
+        throw new IllegalArgumentException("Unable to parse the date: " + source);
+    }
+}
+```
+
+然后，在你的 Spring MVC 配置中注册这个全局转换器：
+
+```xml
+<mvc:annotation-driven conversion-service="conversionService"/>
+
+<bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+    <property name="converters">
+        <set>
+            <bean class="your.package.StringToLocalDateTimeConverter"/>
+        </set>
+    </property>
+</bean>
+```
+
+现在，当你在 Spring MVC 的控制器方法中使用 `LocalDateTime` 类型的参数并标记为 `@RequestParam` 或 `@PathVariable` 时，Spring 将会尝试使用你定义的多个格式进行转换。例如：
+
+```java
+@GetMapping("/example")
+public String example(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime date) {
+    // Your logic here
+    return "example";
+}
+```
+
+这样，Spring 将会根据你提供的多个时间格式来尝试解析参数中的日期时间字符串。
+
+
+
+在使用 jackson 进行类和json的相互转换时，一定要具有get和set方法，否则会出现错误：No serializer found for class xxx and no properties discovered to create BeanSerializer。
+
+# 数据校验
+
+web项目中，后端对于前端传递的参数总是免不了进行校验，比如字符长度、字段大小、null校验等等，虽然有些校验前端也会去做，但是为了增加web应用的健壮性和安全性（比如，如果绕过前端发送的直接请求，这时参数就没法得到保证了），对于重要的接口，后端进行参数二次校验是非常有必要的！
+
+在使用Spring MVC框架之后，在进行请求的数据绑定（data binding）成功之后，可以基于`javax.validation.Valid注解`或者`Spring的@Validated注解`进行自动化数据校验，并且支持配置全局和单个请求的校验器。使用起来非常方便和简单，大大减少了开发人员的负担！
+
+在上面 “`Spring MVC参数属性校验`” 的部分中，通过MVC配置的默认校验，仅仅是针对Spring MVC的控制器方法绑定的参数对象的属性进行校验，如果还需要对于`方法参数本身`进行或者`方法的返回值`进行校验，比如校验方法参数和返回值本身不为null，或者需要对属于非控制器的方法进行同样的Bean validation校验，那么我们需要配置Spring 驱动方法校验。`Spring 驱动方法校验`的校验规则和上面的Spring MVC参数属性校验的校验规则都是一样的，只不过它的应用范围更加广泛，在普通项目中应该手动配置Spring 驱动方法校验。同样，如果是Spring Boot的web项目，那么Spring Boot为我们自动配置好了，我们无需任何配置！
+
+
+
 # Web 配置
 
 应用程序可以声明在 [特殊的 Bean 类型](https://springdoc.cn/spring/web.html#mvc-servlet-special-bean-types) 中列出的处理请求所需的基础设施 Bean。 `DispatcherServlet` 检查 `WebApplicationContext` 中的每个特殊Bean。如果没有匹配的Bean类型，它将回到 [`DispatcherServlet.properties`](https://github.com/spring-projects/spring-framework/tree/main/spring-webmvc/src/main/resources/org/springframework/web/servlet/DispatcherServlet.properties) 中所列的默认类型。
