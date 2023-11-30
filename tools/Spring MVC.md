@@ -2,80 +2,388 @@
 
 Spring Web MVC 是基于 Servlet API 构建的原始 Web 框架，从一开始就包含在 Spring 框架中。正式名称“Spring Web MVC”来自其源模块的名称 ( [`spring-webmvc`](https://github.com/spring-projects/spring-framework/tree/main/spring-webmvc))，但更常见的名称是“Spring MVC”。
 
-与 Spring Web MVC 并行，Spring Framework 5.0 引入了一个反应式堆栈 Web 框架，其名称“Spring WebFlux”也基于其源模块 ( [`spring-webflux`](https://github.com/spring-projects/spring-framework/tree/main/spring-webflux))。本章介绍 Spring Web MVC。
+与 Spring Web MVC 并行，Spring Framework 5.0 引入了一个反应式堆栈 Web 框架，其名称“Spring WebFlux”也基于其源模块 ( [`spring-webflux`](https://github.com/spring-projects/spring-framework/tree/main/spring-webflux))。
 
-# 父子容器
+Spring Web MVC是构建在原始的Servlet API 上的Web 框架，并且从一开始就包含在 Spring Framework中，是Spring的核心组件。它正式名称"Spring Web MVC"是来自Spring的源码模块（spring-webmvc，[github.com/spring-proj…](https://link.juejin.cn?target=https%3A%2F%2Fgithub.com%2Fspring-projects%2Fspring-framework%2Ftree%2Fmaster%2Fspring-webmvc%EF%BC%89%E7%9A%84%E5%90%8D%E7%A7%B0%EF%BC%8C%E4%BD%86%E5%AE%83%E6%9B%B4%E9%80%9A%E5%B8%B8%E8%A2%AB%E7%A7%B0%E7%AE%80%E7%A7%B0%E4%B8%BA%22Spring) MVC"。
 
-使用父子容器时，子容器的mapper路径需要为/，不然无法匹配
+也就是说，Spring MVC框架本身就是基于Servlet规范的，但是它对原始的Servlet API进行了封装，屏蔽了底层原始的Servlet方法，提供了更加高级的开发模式和注解的支持，用于方便开发者快速开发基于Servlet API并部署到Servlet容器的Web应用程序。
 
-关于controller 的配置不能定义在父容器，例如convert，信息转换等
+# 使用
 
-# 原理
+**我们只需要添加一个spring-webmvc依赖，即可实现最简单的Spring MVC项目的测试，spring-webmvc依赖包含了spring-web依赖以及Spring框架的核心依赖，比如spring-core、spring-context等等。**
 
-## DispatcherServlet
+```xml
+<dependencies>
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-webmvc</artifactId>
+        <version>${spring-framework.version}</version>
+    </dependency>
+</dependencies>
+```
 
-Spring MVC和其他许多Web框架一样，是围绕前端控制器模式设计的，其中一个中央 `Servlet`，即 `DispatcherServlet`，为请求处理提供了一个共享算法，而实际工作则由可配置的委托组件执行。这种模式很灵活，支持多样化的工作流程。
+# 架构
 
-`DispatcherServlet` 和其他Servlet一样，需要根据 `Servlet` 规范，使用Java配置或在 `web.xml` 中进行声明和映射。反过来，`DispatcherServlet` 使用Spring配置来发现它在请求映射、视图解析、异常处理 [等](https://springdoc.cn/spring/web.html#mvc-servlet-special-bean-types) 方面需要的委托组件。
+Spring MVC基于MVC设计模式。在B/S架构中，系统标准的三层架构包括：表现层、业务层、持久层。三层架构在我们的实际开发中使用的非常多，属于宏观的解决方案。而MVC全名是Model View Controller，是模型(model)－视图(view)－控制器(controller)的缩写，是一种用于设计创建 Web 应用程序表现层的模式：
 
-下面这个Java配置的例子注册并初始化了 `DispatcherServlet`，它是由Servlet容器自动检测到的（见 [Servlet 配置](https://springdoc.cn/spring/web.html#mvc-container-config)）：
+1. 表现层，框架有比如SpringMVC和struts2。
+
+   1. 也就是我们常说的web层。它负责接收客户端请求，向客户端响应结果，通常客户端使用HTTP协议请求web层，web需要接收HTTP请求，完成HTTP响应。表现层依赖业务层，接收到客户端请求一般会调用业务层进行业务处理，并将业务层返回的处理结果响应给客户端。
+
+   2. 表现层的设计一般都使用
+
+      ```
+      MVC模型
+      ```
+
+      。（MVC是表现层的设计模型，和其他层没有关系）：
+
+      1. `V即View视图`，是指用户看到并与之交互的界面。比如由html元素组成的网页界面，或者软件的客户端界面。视图层仅仅是展示数据，并且提供给用户的对应的操作界面。位于最上层。
+      2. `C即Controller控制器`，是指控制器接受用户的输入并调用模型和视图去完成用户的需求，控制器本身不输出任何东西和做任何处理。它只是接收请求并决定调用哪个model模型构件去处理请求，然后再确定用哪个视图来显示返回的数据。简单的说，Controller负责转发请求和响应，它将View和Model联系起来。Controller位于第二层。
+      3. `M即Model模型`，包括业务功能编写（例如算法实现）、数据库设计以及数据存取操作实现。在MVC的三个部件中，模型拥有最多的处理任务，Model位于最下层。
+
+   3. `表现层也被成为Controller层`，因为在前后端分离开发之后流行，后端一般不需要返回HTML页面了，而是直接返回JSON数据给前端即可，数据的解析和页面展示展示由前端框架负责。而在基于三层架构的Web应用中，Model也可以指全部的单纯的数据模型，也就是JavaBean对象，而业务功能由业务层承担了。也就是说MVC中的，View和Model要么很少使用了，要么有了新的意义。
+
+2. 业务层，业务层一般不需要框架，因为它主要是一些业务逻辑代码。
+
+   1. 也就是我们常说的`service层`。它负责业务逻辑处理，和我们开发项目的需求息息相关。web层依赖业务层，但是业务层不依赖web层。
+   2. 业务层在业务处理时可能会依赖持久层，比如操作数据库数据。
+
+3. 持久层，框架有比如mybatis和hibernate。
+
+   1. 也就是我们是常说的`dao层或者mapper层`。负责对于数据的访问和操作，以及数据持久化，数据库是对数据进行持久化的载体，持久层是业务层和数据库进行交互的接口，业务层需要通过持久层来访问和操作数据库数。通俗的讲，持久层就是和数据库交互，对数据库表进行曾删改查的。
+
+**总的来说，MVC模式与三层架构结合使用时的关系（采用SSM框架，未实现前后端分离）：**
+
+![在这里插入图片描述](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d90b5676746049c58fb291b3f3c7aed4~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp)
+
+如果是基于前后端分离的项目，所有请求都是返回JSON字符串给前端，那么由于项目不再需要JSP、freemarker等技术以及前端资源，不再需要响应HTML页面，因此对应的View视图层或许也可以不需要了，或者说View的工作由前端框架来实现了。
+
+# 核心组件
+
+Spring MVC是基于**组件式**的Web框架，一个不同的功能点都由一个不同的组件负责，这样做的好处之一就是：**各个组件分工明确、相互配合完成请求的处理和响应工作。而且每一个组件都是独立的扩展点，我们可以很容易对其进行扩展而不必特别关心其他组件，相当灵活（在自定义组件之前我们还是有必要了解这些组件的关系的）。**
+
+## 分发器
+
+与其他许多Web框架一样，**Spring MVC围绕分派控制器模式进行设计**，在该模式下， `DispatcherServlet`提供了**用于请求处理和分发的整体逻辑，而实际上的请求处理的工作是由各个可配置的组件来完成的。该模型非常灵活，并支持多种工作流程。DispatcherServlet也被称作前端控制器。**
+
+与任何Servlet一样，都需要根据`Servlet规范`使用JavConfig或在web.xml中声明和映射DispatcherServlet（我们在前面就学习过了）。反过来，`DispatcherServlet`将会使用Spring的配置发现、调用请求映射，视图解析，异常处理等委托组件。
+
+简单的说，**用户请求到达DispatcherServlet，然后由它调用其它组件处理用户的请求，DispatcherServlet是整个请求处理的流程控制中心，DispatcherServlet的存在降低了组件之间的耦合性。**
+
+**这些不同功能的组件，在框架中对应着不同的顶级接口，它们的实现类都可以看作是由Spring 管理一些特殊的bean，DispatcherServlet委托给不同的特殊 bean 以处理请求并呈现适当的响应。通常这些组件（接口）都有默认的实现，也就是说，这些特殊bean不需要我们去配置，但我们也可以自定义其属性并扩展或替换它们。**
+
+> Spring Boot遵循不同的初始化顺序。**Spring Boot不是挂入Servlet容器的生命周期，而是使用Spring配置来启动自己和嵌入式Servlet容器**。`Filter` 和 `Servlet` 声明在Spring配置中被检测到，并在Servlet容器中注册。
+
+**DispatcherServlet将会委托的特殊bean（接口、组件）有下面几种**（来自[Spring官网](https://link.juejin.cn?target=https%3A%2F%2Fdocs.spring.io%2Fspring-framework%2Fdocs%2F5.2.8.RELEASE%2Fspring-framework-reference%2Fweb.html%23mvc-servlet-special-bean-types)）：
+
+| HandlerMapping                        | 处理器映射器，用于查找能够处理请求的Handler，将请求映射为HandlerExecutionChain 对象（包含一个Handler处理器对象、多个 HandlerInterceptor 拦截器）对象。 |
+| ------------------------------------- | ------------------------------------------------------------ |
+| HandlerAdapter                        | 处理器适配器，帮助 DispatcherServlet调用请求映射到的Handler，但是不管Handler实际如何调用。将会返回一个ModelAndView对象，其中model是一个Map结构，存放了我们返回的所有数据，view是逻辑视图名，即ViewName。 |
+| HandlerExceptionResolver              | 异常解析器，如果在前面执行handler的过程中抛出了某个异常，将会走异常解析器的方法！在异常解析器中可以将此错误映射到其他handler、HTML 错误视图（错误页面）或统一抛出自己的异常。 |
+| ViewResolver                          | 视图解析器，ViewResolver根据handler执行之后返回的ModelAndView中的String类型的逻辑视图名解析成物理视图名，即具体的资源地址，再生成对应的View视图对象。但是具体的事务解析以及数据填充工作由View视图自己完成（View. render方法）。 |
+| LocaleResolver, LocaleContextResolver | 区域解析器，用户的区域也称为Locale，Locale信息是可以由前端直接获取的，可以根据不同的用户区域展示不同的视图，比如为不同区域的用户可以设置不同的语言和时区，也就是提供国际化视图支持。 |
+| ThemeResolver                         | 主题解析器，主题就是系统的整体样式或风格，可通过Spring MVC框架提供的主题（theme）设置应用不同的整体样式风格，提高用户体验。Spring MVC的主题就是一些静态资源的集合，即包括样式及图片，用来控制应用的视觉风格。主题也支持国际化，同一个主题不同区域也可以显示不同的风格。 |
+| MultipartResolver                     | 多部件解析器，用于处理上传请求，文件上传时就可以使用MultipartResolver来解析上传请求中的文件数据，方便快捷的实现文件上传！ |
+| FlashMapManager                       | 存储并检索FlashMap，这些FlashMap可用于将属性从一个请求传递到另一个请求，通常是用在重定向中。也就是说FlashMap主要用在redirect中传递参数，而FlashMapManager则用于管理这些FlashMap。 |
+
+## HandlerMapping
+
+### Handler
+
+**Handler，即处理器，它对应着MVC中的C也就是Controller，在Spring MVC框架中，它的实现有很多种，比如：**
+
+1. `实现Servlet接口或者继承HttpServlet类`等方法，这是最传统的方式，在使用框架之后，此方式几乎不再使用了。
+2. `实现了Coltroller接口或者继承Coltroller的实现类`。
+3. `实现了HttpRequestHandler接口或者继承HttpRequestHandler的实现类`。
+4. 标注了`@RequestMapping注解以及使用@RequestMapping 作为元注解的注解（比如@GetMapping、@PostMapping、@PutMapping、@DeleteMapping、@PatchMapping等）的方法`。
+
+Handler中就包含我们的业务代码逻辑！
+
+一个Controller的实现被封装为一个对应类型的Handler对象。其中，采用@RequestMapping注解以及使用@RequestMapping 作为元注解的注解实现的Controller将被封装为HandlerMethod，内部保存了Controller方法。这种方式也最为常用，只需要在方法前加上@RequestMapping注解或者以@RequestMapping注解为元注解的注解，该方法就被作为Controller，对于该方法所属的具体类没有任何要求，因此一个Controller类中可以包含多个Controller方法，可以处理不同的请求，这种方法级别的Controller实现节省了大量类文件的编写，让应用更加轻量级。
+
+Handler有多种类型，但是没有统一的接口，因此在源码中使用`Object`类型来保存。
+
+### HandlerMapping
+
+在Spring MVC中每个请求都需要一个对应的Handler来处理，那么当接收到一个请求之后到底使用哪个Handler进行处理呢？这需要通过HandlerMapping来查找了。
+
+HandlerMapping即处理器映射器，它由DispatcherServlet调用，被用来根据请求（request）查找对应的Handler，并将请求映射为HandlerExecutionChain 对象（包含一个Handler处理器对象、多个用于预处理和后处理的HandlerInterceptor 拦截器）对象。
 
 ```java
-public class MyWebApplicationInitializer implements WebApplicationInitializer {
+interface HandlerMapping {
+
+    /**
+     * 返回包含匹配此请求的处理程序Handler对象和全部HandlerInterceptor拦截器链的HandlerExecutionChain。
+     * 可根据请求 URL、会话状态或实现类选择的任何因素进行选择。
+     * <p>
+     * DispatcherServlet将查询所有已注册的HandlerMapping的bean 以查找匹配项，如果未找到，则返回null。这不是错误。
+     *
+     * @return 一个包含handler对象和全部interceptor拦截器的HandlerExecutionChain对象，如未找到映射，那么返回null
+     */
+    @Nullable
+    HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception;
+
+}
+```
+
+可以看到，HandlerMapping接口包含唯一的一个getHandler方法，这个方法就是通过request找到HandlerExecutionChain，而HandlerExecutionChain包装了一个Handler和一组Interceptor拦截器。
+
+### 实现原理
+
+请求映射的详细规则因HandlerMapping的不同实现而各不相同，web项目中多个映射器可以共存互不影响，并且可以排序。在查找映射的时候，DispatcherServlet将遍历所有在当前容器中已注册的HandlerMapping的bean以查找匹配项，找到第一个即停止查找。
+
+如果在配置文件中指定HandlerMapping的实现，那么`Spring5.2.8.RELEASE`版本默认将加载`BeanNameUrlHandlerMapping、RequestMappingHandlerMapping以及RouterFunctionMapping（Spring 5.2新增的用于支持RouterFunctions的映射器）`这三个HandlerMapping。如果手动配置了HandlerMapping，那么不会加载默认的HandlerMapping。
+
+一般我们不需要指定HandlerMapping，直接采用默认配置即可！
+
+#### BeanNameUrlHandlerMapping
+
+beanName方式。BeanNameUrlHandlerMapping，利用Controller的beanname来作为URL映射查找对应的Handler。BeanNameUrlHandlerMapping只会查找采用实现了Coltroller接口或者继承Coltroller的实现类，以及实现了HttpRequestHandler接口或者继承HttpRequestHandler的实现类这两种方式实现的Handler。
+
+BeanNameUrlHandlerMapping将会默认配置（在没有手动配置其他HandlerMapping时），因此我们只需要配置Handler。
+
+```java
+public class BeanNameUrlController implements Controller {
 
     @Override
-    public void onStartup(ServletContext servletContext) {
-
-        // Load Spring web application configuration
-        AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
-        context.register(AppConfig.class);
-
-        // Create and register the DispatcherServlet
-        DispatcherServlet servlet = new DispatcherServlet(context);
-        ServletRegistration.Dynamic registration = servletContext.addServlet("app", servlet);
-        registration.setLoadOnStartup(1);
-        registration.addMapping("/app/*");
+    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        //创建ModelAndView对象
+        ModelAndView mv = new ModelAndView();
+        //跳转到哪个页面    mvc会走视图解析器
+        mv.setViewName("index.jsp");
+        return mv;
     }
 }
 ```
 
-以下是 `web.xml` 配置的例子，它注册并初始化了 `DispatcherServlet`：
+采用XML的方式如下：
 
 ```xml
-<web-app>
-
-    <listener>
-        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-    </listener>
-
-    <context-param>
-        <param-name>contextConfigLocation</param-name>
-        <param-value>/WEB-INF/app-context.xml</param-value>
-    </context-param>
-
-    <servlet>
-        <servlet-name>app</servlet-name>
-        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-        <init-param>
-            <param-name>contextConfigLocation</param-name>
-            <param-value></param-value>
-        </init-param>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>app</servlet-name>
-        <url-pattern>/app/*</url-pattern>
-    </servlet-mapping>
-
-</web-app>
+<!-- 注册 Handler(实现Controller接口)，name表示url路径，name前要加'/' -->
+<bean name="/beanNameUrl" class="com.spring.mvc.controller.BeanNameUrlController"/>
 ```
 
-> Spring Boot遵循不同的初始化顺序。**Spring Boot不是挂入Servlet容器的生命周期，而是使用Spring配置来启动自己和嵌入式Servlet容器**。`Filter` 和 `Servlet` 声明在Spring配置中被检测到，并在Servlet容器中注册。
+#### SimpleUrlHandlerMapping
 
-# 上下文层次结构
+url方式。SimpleUrlHandlerMapping，根据配置的URL路径和Controller映射来查找对应的Handler，该方式可以将多个URL集中配置。SimpleUrlHandlerMapping只会查找采用实现了Coltroller接口或者继承Coltroller的实现类，以及实现了HttpRequestHandler接口或者继承HttpRequestHandler的实现类这两种方式实现的Handler。
 
-`DispatcherServlet` 期望有一个 `WebApplicationContext`（普通 `ApplicationContext` 的扩展）用于自己的配置。`WebApplicationContext` 有一个与 `ServletContext` 和与之相关的 `Servlet` 的链接。它也被绑定到 `ServletContext`，这样应用程序就可以使用 `RequestContextUtils` 上的静态方法来查询 `WebApplicationContext`，如果他们需要访问它的话。
+SimpleUrlHandlerMapping默认不会被Spring自动配置，因此需要手动配置。
+
+```xml
+<!-- 注册 HandlerMapping，基于SimpleUrlHandlerMapping的方式 -->
+<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="mappings">
+        <!--配置请求url和handler的beanName的映射关系-->
+        <props>
+            <prop key="/simpleUrl1">simpleUrlController1</prop>
+            <prop key="/simpleUrl2">simpleUrlController2</prop>
+            <!--通过*配置一个通用的Handler-->
+            <!--那么 比如/simpleUrl3  /simpleUrl4等请求都会被转发到simpleUrlController3的Handler-->
+            <prop key="/simpleUrl*">simpleUrlController3</prop>
+        </props>
+    </property>
+</bean>
+```
+
+#### RequestMappingHandlerMapping
+
+注解方式。RequestMappingHandlerMapping是最常用的一个HandlerMapping，因为它支持查找通过@RequestMapping注解或者@RequestMapping作为元注解的方式实现的Handler。从spring3.1版本开始，废除了DefaultAnnotationHandlerMapping的使用。
+
+RequestMappingHandlerMapping在构建HandlerExecutionChain对象时，会在内部将对象内的handler属性的类型设置成HandlerMethod类型。
+
+RequestMappingHandlerMapping将会默认配置（在没有手动配置其他HandlerMapping时），因此我们只需要配置Handler。而Handler的案例就不用说了吧，这个太常见了，就我们最常用的在方法上标注@RequestMapping注解以及使用@RequestMapping 作为元注解的注解（比如@GetMapping, @PostMapping, @PutMapping, @DeleteMapping, @PatchMapping）的方式！
+
+## HanderAdapter
+
+处理器适配器。帮助 DispatcherServlet调用找到的Handler，但是不管Handler实际如何调用。
+
+在HandlerMapping找到对应的Handler之后，需要调用Handler，但是我们之前说过，Handler的实现形式有很多种，如果通过if else来判断类型并调用，那么可能随时涉及到修改此前的代码，这样就不符合开闭原则。通过`HandlerAdapter对Handler`进行执行，这是`适配器模式`的应用，通过扩展HandlerAdapter可以对更多类型的处理器进行执行而不修改修改源码。
+
+当HandlerMapping获取到执行请求的Handler时，DispatcherServlte将会依次调用所有已注册的HandlerAdapter（可以排序），如果当前HandlerAdapter能够对当前的Handler进行执行，那么就通过当前HandlerAdapter来执行该Handler，这样就大大的减少了通过DispatcherServlet直接调用Handler的难度，同时这样可以使得程序的扩展性大大增强！
+
+HandlerAdapter会通过反射调用具体Handler的方法，但是方法具体是怎么执行的，HandlerAdapter不会关心！执行完毕之后，HandlerAdapter将返回`ModelAndView`对象，其中model是一个Map结构，其实就是存放了我们返回给请求的所有结果值，view是逻辑视图名，即ViewName。`如果不需要渲染视图，则可能返回null，比如application/json请求。`
+
+HandlerAdapter的接口方法如下，通过`supports`方法判断是否辅助执行该handler，通过`handle`方法对Handler进行执行。
+
+```java
+public interface HandlerAdapter {
+
+    /**
+     * 给定一个handler实例，返回此 HandlerAdapter 是否可以支持它。
+     * 通常一个类型的HandlerAdapter仅支持一个类型的handler。
+     *
+     * @param handler 给定的handler处理器
+     * @return 此HandlerAdapter是否可以使用给定的handler
+     */
+    boolean supports(Object handler);
+
+
+    /**
+     * 使用给定的handler来处理此请求。
+     *
+     * @param request  当前 HTTP 请求
+     * @param response 当前 HTTP 响应
+     * @param handler  要使用的handler。此对象之前必须传递给此接口的supports方法，并且该方法必须返回true
+     * @return 一个ModelAndView模型和视图对象，具有视图的名称和所需的模型数据，如果请求已直接处理，则返回null
+     */
+    ModelAndView handle(HttpServletRequest request, HttpServletResponse response,
+                        Object handler) throws Exception;
+
+    // 获取当前请求的最后更改时间，主要用于供给浏览器判断当前请求是否修改过，
+    // 从而判断是否可以直接使用之前缓存的结果
+
+    /**
+     * Same contract as for HttpServlet's getLastModified method. Can simply return -1 if there's no support in the handler class.
+     * 与HttpServlet的getLastModified方法相同的作用。如果handler中没有支持，只需返回 -1 即可。
+     *
+     * @param request 当前 HTTP 请求
+     * @param handler 要使用的handler
+     * @return 给定handler的最后修改值
+     */
+    long getLastModified(HttpServletRequest request, Object handler);
+
+}
+```
+
+Handler的执行是一个复杂的过程，其中可能涉及到参数类型的转换和封装，JSON的返序列化和序列化等过程！
+
+### 实现
+
+通常一种类型的Handler需要一种对应的的HandlerAdapter。
+
+1. `RequestMappingHandlerAdapter`主要是`适配注解处理器`，注解处理器就是我们经常使用@RequestMapping注解及其作为元注解的方法处理器。
+2. `HttpRequestHandlerAdapter`主要是适配静态资源处理器，静态资源处理器就是实现了HttpRequestHandler接口或HttpRequestHandler接口子类的类处理器，这一类处理器的作用是处理通过Spring MVC来访问的静态资源的请求。
+3. `SimpleControllerHandlerAdapter`是Controller处理适配器，适配实现了Controller接口或Controller接口子类的处理器。
+4. `SimpleServletHandlerAdapter`是Servlet处理适配器，适配实现了Servlet接口或Servlet的子类的处理器，我们不仅可以在web.xml里面配置Servlet，其实也可以用SpringMVC来配置Servlet，不过这个适配器很少用到，而且Spring MVC默认的适配器没有它。
+
+`Spring5.2.8.RELEASE`版本中，默认配置的HandlerAdapter为`HttpRequestHandlerAdapter、SimpleControllerHandlerAdapter、RequestMappingHandlerAdapter，以及HandlerFunctionAdapter（Spring 5.2新增的用于支持RouterFunctions的处理器适配器）`。
+
+同样，一般不会指定HandlerMapping，直接采用默认配置！
+
+## HandlerExceptionResolver
+
+异常解析器，如果在前面执行handler的过程中抛出了某个异常，将会走异常解析器的方法！注意，HandlerExceptionResolver只能处理在handler执行完毕之前抛出的异常，如果是在handler执行完毕之后的步骤中抛出的异常，比如页面渲染过程中的异常，它是不能处理的。
+
+异常解析器可以定义各种解决异常的策略，可能将请求映射到其他handler、HTML 错误视图（错误页面）或统一抛出自己的异常。自定义的异常解析器必须实现HandlerExceptionResolver接口，并实现resolveException方法，然后将该异常解析器配置到容器中！
+
+一个大型且完善的项目通常都会有自己的异常解析器，我们后面会详细讲！
+
+HandlerExceptionResolver只有一个`resolveException`方法，该方法返回一个`ModelAndView`，其中可以包含要返回的数据和视图名称，也就是说，比如在`HandlerAdapter.handle()`方法执行过程中抛出异常，那么转而会执行`HandlerExceptionResolver.resolveException()`方法，最终将返回并渲染该方法的返回值。
+
+```java
+public interface HandlerExceptionResolver {
+
+    /**
+     * 尝试解决在处理程序执行期间抛出的给定异常，返回表示特定错误的ModelAndView视图（比如一个统一的异常页面）
+     * <p>
+     * 返回的ModelAndView可能是一个空的兑现(ModelAndView.isEmpty()返回true)
+     * 表示异常已成功解决，但不会呈现任何视图，例如通过设置状态代码。
+     *
+     * @param request  当前 HTTP 请求
+     * @param response 当前 HTTP 响应
+     * @param handler  执行的handler
+     * @param ex       在handler执行期间抛出的异常
+     * @return 相应的要转发到的ModelAndView，或null
+     */
+    @Nullable
+    ModelAndView resolveException(
+            HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex);
+
+}
+```
+
+## ViewResolver
+
+### View
+
+View，视图，Spring MVC框架提供了很多类型的View视图支持，包括：JstlView、FreemarkerView、PdfView等，我们最常用的视图就是jsp，它对应着InternalResourceView。
+
+View对象中保存了经过逻辑视图名解析出来的物理视图资源URL路径，通过`View.render`方法可将返回的model数据（需要展示的数据）填充（渲染）到对应的物理视图中的对应位置，并将最终渲染完毕的页面通过response响应给客户端（比如返回拼接的HTML文本）。
+
+但是，如果更加严格的话，View 更多的是用于在将模型数据移交给特定视图技术之前进行数据准备，而不是真正的进行视图渲染，视图渲染仍然依靠其该类型视图本身的视图渲染技术！
+
+比如对于一个简单的JSP的View来说，比如InternalResourceView，在渲染时首先就是将model数据存储到request域属性中，然后通过RequestDispatcher直接将请求include包含或者forward转发到物理视图路径URL对应的JSP资源，而include/forward方法则是我们在之前就见过的原始的Servlet API，最终还是通过response响应给用户的（对JSP来说就是将JSP渲染之后通过response输出为HTML文本）。
+
+从上面JSP视图的渲染和输出可以看出来，View中仅仅是进行了数据的封装和准备（比如将model数据存储到request域属性中），并没有进行实际渲染视图的工作（仅仅是调用include/forward方法），对于JSP视图来说，真正的视图渲染和数据填充以及返回响应仍然是依赖最原始JSP技术，与Spring MVC无关，与View无关。
+
+```java
+public interface View {
+
+    /**
+     * @return Content-Type 字符串，可能包含charset
+     */
+    @Nullable
+    default String getContentType() {
+        return null;
+    }
+
+    /**
+     * 根据给定的model数据渲染当前的view
+     *
+     * @param model    一个Map，名称作为key，值作为value
+     * @param request  当前请求
+     * @param response 响应对象
+     */
+    void render(@Nullable Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
+            throws Exception;
+}
+```
+
+### ViewResolver
+
+视图解析器，ViewResolver根据handler执行之后返回的ModelAndView中的String类型的逻辑视图名解析成物理视图名，即具体的资源URL地址，再生成对应的View视图对象，具体的视图渲染和数据填充的工作由View视图自己完成，实际上View中也仅仅是进行了数据准备工作，最终仍然是通过调用对应的视图的API来进行视图渲染和数据填充的，而这些方法都是各种视图模版或者技术规范自身的API，并非是View实现的。
+
+ViewResolver接口只有一个`resolveViewName`方法，用于根据给定的逻辑视图名viewName和区域（用于国际化）locale查找对应的物理视图URL位置，并将其解析为一个`View`视图对象！
+
+```java
+public interface ViewResolver {
+
+    /**
+     * 按给定的viewName解析为View视图。
+     * <p>
+     *
+     * @param viewName 要解析的视图的名称
+     * @param locale   解析视图的区域设置，用于支持国际化
+     * @return View 对象，如果找不到对应的视图，那么返回null
+     * @throws Exception 如果视图无法解析（通常在创建实际View视图对象时出现问题）
+     */
+    @Nullable
+    View resolveViewName(String viewName, Locale locale) throws Exception;
+
+}
+```
+
+Spring为我们提供了非常多的视图解析器的默认实现，例如：
+
+1. `BeanNameViewResolver`：在当前应用程序上下文中将逻辑视图名称解析为 bean名称，随后查找对应的名称的bean实例并返回。也就是说对应名称的bean应该是一个View视图对象。
+2. `FreeMarkerViewResolver`：将逻辑视图名称解析为FreeMarkerView对象，说白了就是对FreeMarker模版的支持！
+3. `InternalResourceViewResolver`：使用的最广泛的一个视图解析器。将逻辑视图名称解析为InternalResourceView对象，而InternalResourceView则会将返回的Model模型的属性都存放到对应的request属性中，然后通过RequestDispatcher在服务器端把请求forword到目标URL。我们知道/WEB-INF/下面的内容是不能直接通过请求的方式请求到的，为了安全性考虑，我们通常会把jsp等资源文件放在WEB-INF目录下，而InternalResourceViewResolver的自动转发机制就能即安全又方便（不需要写转发代码了）的访问这些资源了。
+
+默认的ViewResolver就是`InternalResourceViewResolver`，指定的ViewResolver同样支持Order排序！
+
+### 配置
+
+**Spring MVC的很多组件都不需要我们配置，但是ViewResolver则可能需要！通常我们这样配置InternalResourceViewResolver：**
+
+```xml
+xml复制代码<!--配置视图解析器-->
+<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <!--要访问文件所在的相对目录-->
+    <property name="prefix" value="/WEB-INF/pages/"/>
+    <!--文件的后缀名-->
+    <property name="suffix" value=".jsp"/>
+</bean>
+```
+
+**对于没有前后端分离的项目，通常各种视图比如JSP、CSS、JS文件是放在WEB-INF目录下的，因为/WEB-INF/下面的内容是不能通过直接请求的方式访问到，它需要服务器内部转发，因此我们通常配置InternalResourceViewResolver。**
+
+**ViewResolver默认解析的视图文件位置根路径为webapp，WEB-INF目录也在这个下面，因此如果我们需要找到一个/WEB-INF/pages/index.jsp文件，那么我们返回的逻辑视图名就必须是“/WEB-INF/pages/index.jsp”。**
+
+**此时我们可以像上面的案例那样设置InternalResourceViewResolver的prefix和suffix属性，prefix表示视图文件的前缀路径，而suffix则表示视图文件的后缀。此时我们返回的逻辑视图名可以直接返回“index”，InternalResourceViewResolver在解析时会自动拼接为“/WEB-INF/pages/index.jsp”，这样代码也更加简洁！**
+
+# 父子容器
 
 对于许多应用程序，有一个单一的 `WebApplicationContext` 是简单的，也是足够的。也可以有一个上下文层次结构，一个根 `WebApplicationContext` 被多个 `DispatcherServlet`（或其他 `Servlet`）实例共享，每个实例都有自己的子 `WebApplicationContext` 配置。参见 [`ApplicationContext` 的附加功能](https://springdoc.cn/spring/core.html#context-introduction) ，以了解更多关于上下文层次结构的特性。
 
@@ -83,63 +391,408 @@ public class MyWebApplicationInitializer implements WebApplicationInitializer {
 
 ![mvc context hierarchy](https://springdoc.cn/spring/images/mvc-context-hierarchy.png)
 
-下面的例子配置了一个 `WebApplicationContext` 的层次结构：
+## 初始化
+
+我们此前学过并知道普通的Spring应用有自己的ApplicationContext容器，而如果是基于Spring的web应用，那么它的容器有所不同，将会使用WebApplicationContext。
+
+DispatcherServlet 需要WebApplicationContext容器（Web应用程序上下文，扩展了ApplicationContext（普通应用程序上下文））来进行自己的配置，因为WebApplicationContext具有获取ServletContext的getServletContext方法，并且Spring的WebApplicationContext容器同样与web应用的ServletContext相关联，因此我们在web应用程序中可以直接使用RequestContextUtils的静态方法通过当前请求查找WebApplicationContext。
+
+在学习Spring源码的时候，我们知道Spring支持父子容器，但是我们并没有用过，实际上对于许多web应用程序来说，拥有单个WebApplicationContext就足够了，当然也可以有一个有层次的上下文结构，对于比咋的应用程序或许会更好，其中一个Root（根）  WebApplicationContext 在多个调度器服务（或其他 Servlet）实例之间共享，每个实例都有其自己的Child（子） WebApplicationContext 配置。
+
+Root WebApplicationContext 通常包含web应用中的基础结构 bean，例如需要跨多个Servlet实例共享的Dao、数据库配置bean、Service等服务bean，也就是三层架构中的业务层和持久层的bean，这些 bean可以在特定Servlet 的子 WebApplicationContext 中重写（即重新声明）。Child WebApplicationContext则用于存放三层架构中的表现层的bean，比如Controller、ViewResolver、HandlerMapping等Spring MVC的组件bean，因此也被称为Servlet WebApplicationContext。
+
+Spring MVC 依托于 Servlet 规范。Servlet 规范中 ，所有的 Servlet 具有一个相同的上下文 ServletContext，ServletContext 将优先于 Servlet 初始化，Spring 利用了这个特性，在 ServletContext 初始化时创建父容器，并将其绑定到 ServletContext 的属性中，然后在每个 DispatcherServlet 初始过程中创建子容器并将 ServletContext 中的容器设置为父容器。
+
+`DispatcherServlet` 期望有一个 `WebApplicationContext`（普通 `ApplicationContext` 的扩展）用于自己的配置。`WebApplicationContext` 有一个与 `ServletContext` 和与之相关的 `Servlet` 的链接。它也被绑定到 `ServletContext`，这样应用程序就可以使用 `RequestContextUtils` 上的静态方法来查询 `WebApplicationContext`，如果他们需要访问它的话。
+
++ ContextLoaderListener 会被优先初始化时，根据指定的 Spring 的配置文件路径，创建出应用的根上下文`Root WebApplicationContext`。
++ DispatcherServlet 是 SpringMVC 的核心组件。在初始化时，根据指定的 SpringMVC 的配置文件路径，创建出 SpringMVC 的独立上下文`Web WebApplicationContext`。该上下文在创建过程中，会判断`Root WebApplicationContext`是否存在，如果存在就将其设置为自己的 parent 上下文。这就是父子上下文（父子容器）的概念。
+
+父子容器的作用在于，当我们尝试从子容器（`Servlet WebApplicationContext`）中获取一个 bean 时，如果找不到，则会委派给父容器（`Root WebApplicationContext`）进行查找。
+
+### 父容器初始化
+
+Servlet 容器会在 ServletContext 初始化时触发事件，然后由 ServletContextListener 监听，Spring 提供了这个接口的实现 ContextLoaderListener 并在初始化时创建父容器。
 
 ```java
-public class MyWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+public class ContextLoaderListener extends ContextLoader implements ServletContextListener {
 
-    @Override
-    protected Class<?>[] getRootConfigClasses() {
-        return new Class<?>[] { RootConfig.class };
-    }
+	@Override
+	public void contextInitialized(ServletContextEvent event) {
+		initWebApplicationContext(event.getServletContext());
+	}
+}
+```
 
-    @Override
-    protected Class<?>[] getServletConfigClasses() {
-        return new Class<?>[] { App1Config.class };
-    }
+ContextLoaderListener 仅调用了父类 ContextLoader 中的 `initWebApplicationContext`方法创建容器，该方法会将创建后的容器存至名为`WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE` 的属性中。
 
-    @Override
-    protected String[] getServletMappings() {
-        return new String[] { "/app1/*" };
+```xml
+<!-- Spring 配置 -->
+<listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+<!-- 指定 Spring 核心配置文件路径，用于初始化 Root WebApplicationContext 容器 -->
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:applicationContext.xml</param-value>
+</context-param>
+```
+
+上述配置中，ContextLoaderListener 读取 context-param 中的 contextConfigLocation 指定的配置文件，初始化`Root WebApplicationContext`容器。下面查看初始化该容器的源码：
+
+```java
+public WebApplicationContext initWebApplicationContext(ServletContext servletContext) {
+    //(1) 如果已经存在 Root WebApplicationContext，则抛出异常；
+    // 在整个 web 应用中，只能有一个 Root WebApplicationContext 容器
+    if (servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) != null) {
+        throw new IllegalStateException("Cannot initialize context because there is already a root application context present - check whether you have multiple ContextLoader* definitions in your web.xml!");
+    } else {
+        //(2) 打印日志
+        servletContext.log("Initializing Spring root WebApplicationContext");
+        Log logger = LogFactory.getLog(ContextLoader.class);
+        if (logger.isInfoEnabled()) {
+            logger.info("Root WebApplicationContext: initialization started");
+        }
+		// 记录开始时间
+        long startTime = System.currentTimeMillis();
+
+        try {
+            if (this.context == null) {
+                //(3) 创建 WebApplicationContext 对象
+                this.context = this.createWebApplicationContext(servletContext);
+            }
+			//(4) 如果是 ConfigurableWebApplicationContext 的子类，如果未刷新，则进行配置和刷新
+            if (this.context instanceof ConfigurableWebApplicationContext) {
+                ConfigurableWebApplicationContext cwac = (ConfigurableWebApplicationContext)this.context;
+                if (!cwac.isActive()) {  // (4.1)未刷新(激活)
+                    if (cwac.getParent() == null) {  //(4.2) 无父容器，则进行加载和设置
+                        ApplicationContext parent = this.loadParentContext(servletContext);
+                        cwac.setParent(parent);
+                    }
+					// (4.3) 配置 context 对象，并进行刷新
+                    this.configureAndRefreshWebApplicationContext(cwac, servletContext);
+                }
+            }
+
+//(5) 将 context 放进 servletContext 中，记录为 Root WebApplicationContext
+servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.context);
+            //(6) 将 context 和当前线程绑定，这样可以更加方便得到 context
+            ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+            if (ccl == ContextLoader.class.getClassLoader()) {
+                currentContext = this.context;
+            } else if (ccl != null) {
+                currentContextPerThread.put(ccl, this.context);
+            }
+			//(7) 打印日志
+            if (logger.isInfoEnabled()) {
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                logger.info("Root WebApplicationContext initialized in " + elapsedTime + " ms");
+            }
+			//(8) 返回 context				
+            return this.context;
+        } catch (Error | RuntimeException var8) {
+            //(9) 当发生异常，将异常放进 servletContext，不再重新初始化
+            logger.error("Context initialization failed", var8);
+            servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, var8);
+            throw var8;
+        }
     }
 }
 ```
 
-> 如果不需要应用上下文层次结构，应用程序可以通过 `getRootConfigClasses()` 返回所有配置，并从 `getServletConfigClasses()` 返回 `null` 配置。
+上述的 (4.3) 过程调用了 configureAndRefreshWebApplicationContext() 方法对 Context 进行配置，源码如下：
 
-下面的例子显示了 `web.xml` 的等价物：
+```java
+protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac, ServletContext sc) {
+    String configLocationParam;
+    //(1) 如果 wac 使用了默认编号，则重新设置 id 属性
+   	// 注意这里的 wac 就是前一个方法创建的 WebApplicationContext 对象
+    if (ObjectUtils.identityToString(wac).equals(wac.getId())) {
+        // 情况一，使用 contextId 属性
+        configLocationParam = sc.getInitParameter("contextId");
+        if (configLocationParam != null) {
+            wac.setId(configLocationParam);
+        // 情况二，自动生成    
+        } else {
+            wac.setId(ConfigurableWebApplicationContext.APPLICATION_CONTEXT_ID_PREFIX + ObjectUtils.getDisplayString(sc.getContextPath()));
+        }
+    }
+	//(2) 让 context 关联上 ServletContext
+    wac.setServletContext(sc);
+    //(3) 设置 context 的配置文件路径，该路径就是在 web.xml 中配置的 Spring 配置文件路径
+    configLocationParam = sc.getInitParameter("contextConfigLocation");
+    if (configLocationParam != null) {
+        wac.setConfigLocation(configLocationParam);
+    }
+	//(4) 忽略
+    ConfigurableEnvironment env = wac.getEnvironment();
+    if (env instanceof ConfigurableWebEnvironment) {
+        ((ConfigurableWebEnvironment)env).initPropertySources(sc, (ServletConfig)null);
+    }
+	//(5) 执行自定义初始化
+    this.customizeContext(sc, wac);
+    // 刷新 context ，执行初始化
+    wac.refresh();
+}
+```
+
+最后给出 ContextLoaderListener 初始化`Root WebApplicationContext`容器的时序图：
+
+[![img](https://img2020.cnblogs.com/blog/1606446/202008/1606446-20200823004847820-1408075676.jpg)](https://img2020.cnblogs.com/blog/1606446/202008/1606446-20200823004847820-1408075676.jpg)
+
+### 子容器初始化
+
+子容器由 DispatcherServlet 进行初始化，简化后的类图如下所示。
+![在这里插入图片描述](https://img-blog.csdnimg.cn/c5ea1de1d0ec4d7a8d2ccba6e821a28a.png?x-oss-process=image/watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBA5aSn6bmPY29vbA==,size_20,color_FFFFFF,t_70,g_se,x_16)
+
+1. 首先 Spring 提供的 HttpServletBean 继承 HttpServlet 类，重写了 init 方法，并调用了抽象方法 initServletBean。
+2. 然后 HttpServletBean 的子类 FrameworkServlet 重写了 initServletBean 方法，并调用了 initWebApplicationContext 方法，这个方法将会完成子容器的初始化工作。子容器初始化时从 ServletContext 属性中取出并设置父容器。
+3. DispatcherServlet 直接使用了父类 FrameworkServlet 的初始化方法。
+
+```xml
+<!-- SpringMVC 配置 -->
+<servlet>
+    <servlet-name>DispatcherServlet</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <!-- 指定 SpringMVC 核心配置文件路径，用于初始化 Root WebApplicationContext 容器 -->
+    <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:springmvc-config.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+</servlet>
+<servlet-mapping>
+    <servlet-name>DispatcherServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+</servlet-mapping>
+```
+
+DispatcherServlet 在 Web 容器创建之后，会读取 init-param 中 contextConfigLocation 指定的配置文件，初始化`Servlet WebApplicationContext`容器。下面查看初始化该容器的源码：
+
+```java
+protected WebApplicationContext initWebApplicationContext() {
+    //(1) 通过工具类 WebApplicationContextUtils 来获取 Root WebApplicationContext 对象
+    // 内部是从 ServletContext 中取出该对象的（前面方法将它放进了 ServletContext）
+    WebApplicationContext rootContext = WebApplicationContextUtils.getWebApplicationContext(this.getServletContext());
+    //(2) 初始化 WebApplicationContext 对象 wac
+    WebApplicationContext wac = null;
+    // 第一种情况，如果构造方法已经传入 webApplicationContext 属性，则直接使用
+    if (this.webApplicationContext != null) {
+        // 赋值给 wac 变量
+        wac = this.webApplicationContext;
+        // 如果是 ConfigurableWebApplicationContext 类型，并且未激活，则进行初始化
+        if (wac instanceof ConfigurableWebApplicationContext) {
+            ConfigurableWebApplicationContext cwac = (ConfigurableWebApplicationContext)wac;
+            if (!cwac.isActive()) {   // 未激活
+                if (cwac.getParent() == null) {
+                    // 设置 rootContext 对象为 wac 的父上下文
+                    cwac.setParent(rootContext);
+                }
+				// 配置和初始化 wac
+                this.configureAndRefreshWebApplicationContext(cwac);
+            }
+        }
+    }
+	// 第二种情况，从 ServletContext 获取已有的 WebApplicationContext 对象
+    if (wac == null) {
+        wac = this.findWebApplicationContext();
+    }
+	// 第三种情况，创建一个 WebApplicationContext 对象，并将 rootContext 设置为parent
+    if (wac == null) {
+        wac = this.createWebApplicationContext(rootContext);
+    }
+	//(3) 如果未触发刷新事件，则主动触发刷新事件
+    if (!this.refreshEventReceived) {
+        synchronized(this.onRefreshMonitor) {
+            this.onRefresh(wac);
+        }
+    }
+	//(4) 将 context 放进 ServletContext 中，记录为 Servlet WebApplicationContext
+    if (this.publishContext) {
+        String attrName = this.getServletContextAttributeName();
+        this.getServletContext().setAttribute(attrName, wac);
+    }
+	// 返回初始化后的 webApplicationContext
+    return wac;
+}
+```
+
+上述 (2) 步骤中调用了 configureAndRefreshWebApplicationContext() 方法对 Context 进行配置，源码如下：
+
+```java
+protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac) {
+    //(1) 如果 wac 使用了默认编号，则重新设置 id 属性
+    // 注意这里的 wac 就是前一个方法获取到的 context 对象
+    if (ObjectUtils.identityToString(wac).equals(wac.getId())) {
+        // 情况一，使用 contextId 属性
+        if (this.contextId != null) {
+            wac.setId(this.contextId);
+        // 情况二，自动生成    
+        } else {
+ wac.setId(ConfigurableWebApplicationContext.APPLICATION_CONTEXT_ID_PREFIX + ObjectUtils.getDisplayString(this.getServletContext().getContextPath()) + '/' + this.getServletName());
+        }
+    }
+	//(2) 设置 wac 的 servletContext、servletConfig、namespace 属性
+    wac.setServletContext(this.getServletContext());
+    wac.setServletConfig(this.getServletConfig());
+    wac.setNamespace(this.getNamespace());
+    //(3) 添加监听器 SourceFilteringListener 到 wac 中
+    wac.addApplicationListener(new SourceFilteringListener(wac, new FrameworkServlet.ContextRefreshListener()));
+    //(4) 忽略
+    ConfigurableEnvironment env = wac.getEnvironment();
+    if (env instanceof ConfigurableWebEnvironment) {
+        ((ConfigurableWebEnvironment)env).initPropertySources(this.getServletContext(), this.getServletConfig());
+    }
+	//(5) 执行处理完 WebApplicationContext 后的逻辑
+    this.postProcessWebApplicationContext(wac);
+    //(6) 执行处理完 WebApplicationContext 后的逻辑
+    this.applyInitializers(wac);
+    //(7) 刷新 wac ，从而初始化 wac
+    wac.refresh();
+}
+```
+
+大体上，和`Root WebApplicationContext`的配置过程是一样的。最后给出 DispatcherServlet 初始化`Servlet WebApplicationContext`容器的时序图：
+
+[![img](https://img2020.cnblogs.com/blog/1606446/202008/1606446-20200823004930530-578606401.jpg)](https://img2020.cnblogs.com/blog/1606446/202008/1606446-20200823004930530-578606401.jpg)
+
+## 配置
+
+使用 Spring 需要将 bean 注入 Spring 容器，针对 web 环境，配置父容器需要使用 ContextLoaderListener，配置子容器需要使用 DispatcherServlet。
+
+如果是基于XML的配置，那么Root WebApplicationContext通过ContextLoaderListener去加载名为“contextConfigLocation”的context-param参数来配置。而Servlet WebApplicationContext则是通过spring mvc中提供的DispatchServlet的名为“contextConfigLocation”的init-param参数初始化来加载配置。
 
 ```xml
 <web-app>
+    <display-name>Archetype Created Web Application</display-name>
 
+    <!--配置contextConfigLocation初始化参数，指定父容器Root WebApplicationContext的配置文件 -->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:spring-config.xml</param-value>
+    </context-param>
+    <!--监听contextConfigLocation参数并初始化父容器-->
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
 
-    <context-param>
-        <param-name>contextConfigLocation</param-name>
-        <param-value>/WEB-INF/root-context.xml</param-value>
-    </context-param>
 
+    <!-- 配置spring mvc的前端核心控制器 -->
     <servlet>
-        <servlet-name>app1</servlet-name>
-        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <servlet-name>dispatcherServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet
+        </servlet-class>
+        <!-- 配置contextConfigLocation初始化参数，指定子容器的配置文件并创建子容器 Servlet WebApplicationContext -->
         <init-param>
             <param-name>contextConfigLocation</param-name>
-            <param-value>/WEB-INF/app1-context.xml</param-value>
+            <param-value>classpath:spring-mvc-config.xml</param-value>
         </init-param>
+        <!--配置Servlet的对象的创建时间点：取值如果为非负整数，表示应用加载时创建，值越小，servlet的优先级越高，就越先被加载，如果取值为负数，表示在第一次使用时才加载-->
         <load-on-startup>1</load-on-startup>
     </servlet>
-
+    <!--配置映射路径-->
     <servlet-mapping>
-        <servlet-name>app1</servlet-name>
+        <servlet-name>dispatcherServlet</servlet-name>
         <url-pattern>/app1/*</url-pattern>
     </servlet-mapping>
 
 </web-app>
 ```
 
+ContextLoaderListener 被配置到监听器列表，ServletContext 初始化时会使用 context-param 中参数名为 contextConfigLocation 的值作为配置文件路径初始化容器。
+
+DispatcherServlet 也需要添加到 Servlet 列表，DispatcherServlet 同时也会使用初始化参数 contextConfigLocation 作为配置文件的路径初始化容器。
+
+在上面的配置中，`ContextLoaderListener`作为监听器会被优先初始化，随后ServletContext会被初始化并且会将`context-param`参数设置设置进去，而ContextLoaderListener它实际上是一个`ServletContextListener`监听器实现，它将会监听ServletContext的创建事件并调用对应的`contextInitialized方法`，在该方法中将会获取ServletContext配置的`contextConfigLocation`参数（这里面就有我们配置的配置文件路径，默认路径为`/WEB-INF/applicationContext.xml`）并且初始化`Root WebApplicationContext`实例，也就是父容器，实际类型为`XmlWebApplicationContext`。
+
+随后会将父容器通过setAttribute方法设置到ServletContext中，属性的key为”org.springframework.web.context.WebApplicationContext.ROOT”，最后的”ROOT"字样表明这是一个 Root WebApplicationContext，而WebApplicationContext中也会保留ServletContext的引用，这样WebApplicationContext和ServletContext就关联起来了。
+
+随后`DispatcherServlet`会被实例化并且设置初始化参数，在创建完毕之后的`init()`回调方法（该方法在其父类HttpServletBean中）中，将会获取它自己的`contextConfigLocation`参数，并且根据指定的配置文件在`initServletBean()`方法中创建`Servlet WebApplicationContext，也就是子容器`。同时，其会调用ServletContext的getAttribute方法来判断是否存在Root WebApplicationContext。如果存在，则将其设置为自己的parent。
+
+**需要注意1：**由于`Root WebApplicationContext`是早于`Servlet WebApplicationContext`创建和初始化的，所以父容器的 bean 无法访问子容器的 bean，因为子容器还未初始化；而子容器的 bean 可以访问父容器的 bean，访问方式就是前面说的委派查询。说通俗点就是，在 Controller 层里可以注入 Service 对象，而 Service 层里无法注入 Controller 对象（编译可以通过，但是运行会出错）。
+
+**需要注意2**：如果我们没有配置 ContextLoaderListener 来创建`Root WebApplicationContext`容器，那么`Servlet WebApplicationContext`的父上下文就是 null，也就是没有父容器。
+
+注意：如果配置了ContextLoaderListener，那么一定要配置`名为contextConfigLocation的context-param参数`，即指定Spring配置文件位置，如果没有配置，那么默认查找的路径为`/WEB-INF/applicationContext.xml`，找不到对应路径的配置文件就会抛出异常。如果配置了DispatcherServlet，那么一定要配置`名为contextConfigLocation的init-param参数`，即指定Spring MVC配置文件位置，如果没有配置，那么默认查找的路径为`"/WEB-INF/"+容器nameSpace+ ".xml"（默认namespace为servletName+"-servlet"）`，找不到对应路径的配置文件就会抛出异常。
+
+⭐️为什么需要父子容器
+
+父子容器存在的一个意义其实就是分层，如前面那张图所示：
+
++ `Root WebApplicationContext`容器注册各种非 Web 组件的 bean，例如 Services、Repositories。
++ `Web WebApplicationContext`容器注册各种 Web 组件的 bean，例如 Controllers、ViewResolver 和 HandlerMapping。
+
+> 关于controller 的配置不能定义在父容器，例如convert，信息转换等。
+
+所以，这要求我们编写 Spring 和 SpringMVC 配置文件时，Spring 文件配置非 Web 组件的 bean，而 SpringMVC 文件配置 Web 组件的 bean。除此之外，也是为了防止同一组件在不同容器中分别注册初始化，出现两个 bean，这会导致一些错误的出现。
+
+Spring 配置文件中的注解扫描：
+
+```xml
+<!-- 配置 IoC 容器注解扫描的包路径 -->
+<context:component-scan base-package="com.example">
+    <!-- 制定扫包规则，不扫描 @Controller 注解修饰的 Java 类，其它还是要扫描 -->
+    <context:exclude-filter type="annotation"
+                            expression="org.springframework.stereotype.Controller"/>
+</context:component-scan>
+```
+
+SpringMVC 配置文件中的注解扫描：
+
+```xml
+<!-- 配置 IoC 容器的注解扫描的包路径 -->
+<context:component-scan base-package="com.example" use-default-filters="false">
+    <!-- 制定扫包规则，只扫描使用 @Controller 注解修饰的 Java 类 -->
+    <context:include-filter type="annotation"
+                            expression="org.springframework.stereotype.Controller"/>
+</context:component-scan>
+```
+
 > 如果不需要 application context 层次结构，应用程序可以只配置一个 “root” context，并将 `contextConfigLocation` Servlet参数留空。
+
+**在一个传统的Spring web项目中，通常情况下引入的不同组件都有不同的XML配置文件，这样的好处是可以将这些配置分开，而父子容器的作用大概同样是为了划分框架边界而区分的吧，并且实际上可以配置多个子容器共享一个父容器。**
+
+当然，我们可以仅配置一个容器！
+
+**对于XML的配置来说，如果不需要配置父容器，那么我们可以直接不配置context-param和listener，将所有的业务层和持久层的配置都写在spring  MVC的配置文件中即可，如果不需要配置子容器，那么我们在DispatcherServlet的contextConfigLocation参数的param-value中不填写任何值就行了，也就是让它是空着（这表示没有配置文件，如果不添加该属性，将会使用默认配置文件）。**
+
+## 常见问题
+
+在父子容器的配置中，子容器可以引用父容器中的bean，但是父容器不能够引用子容器中的bean的，并且各个子容器中定义的bean是互不可见的。在查找bean时，如果子容器存在该bean，那么将直接从子容器获取，否则才会尝试从父容器中获取！
+
+**如果父子容器的配置中有相同的bean，比如两个配置中扫描包的路径有重叠，那么这个bean将会被初始化两次，注意，这不是覆盖，而是在父子的容器各自初始化两一次并且保存在各自的容器中，这将带来很多问题！**
+
+1. 这样导致在两个父子IOC容器中生成大量的相同bean，这就会造成内存资源的浪费。
+2. 对于某些配置bean，比如Mq的消费者，如果加载了两次，那么带来很大的问题。
+3. 可能导致某些隐性的问题，比如如果子容器和父容器都加载了Service的bean，但是AOP的配置只是在父容器中被应用，那么这样回到这Service的AOP配置失效，因为，子容器将直接使用自己内部的没有经过AOP增强的Service对象。
+   1. 一个避免方法就是使用注解配置，比如@Transactional，但是最好的办法就是：要么所有配置都在子容器中加载，要么父子容器加载的类通过不同的包路径彻底分开！
+
+**如果基于XML配置：**
+
+1. **Servlet WebApplicationContext子容器是一定会被初始化的**，因为它是随着`DispatcherServlet`的创建而默认创建，而DispatcherServlet一般都需要配置。只不过你可以选择不在子容器中初始化你的配置，也就是将param-value参数空着。
+2. **Root WebApplicationContext父容器不一定会被初始化**，因为它被`ContextLoaderListener`创建，而ContextLoaderListener可以不配置，也就是说父容器可以真正的不存在。
+3. 如果同时配置了父子容器，那么请求将会先到达子容器，而在@ReqestMapping的解析过程中，只是对Servlet WebApplicationContext容器中的bean进行处理的，并没有去查找父容器的bean（实际上是只查找当前DispatcherServlet关联的容器）。**因此如果Controller被配置到父容器中，那么因为不会对父容器中含有@RequestMapping注解的函数进行处理，更不会生成相应的handler。那么对应的请求过来的时候由于找不到对应的hander，将无法访问该Controller内部的@ReqestMapping对应的资源。**
+
+**如果基于JavaConfig配置：**
+
+1. 如是通过实现`WebApplicationInitializer`接口来进行配置的项目（比如入门案例中的JavaConfig配置），此时将只有一个容器，虽然它的displayName为Root WebApplicationContext，但是由于它和DispatcherServlet是发生了关联，因此实际上可以看作Servlet WebApplicationContext容器，因此可以解析该容器的Controller实例内部的@ReqestMapping注解，也就是说可以正常使用。
+
+2. 如是通过继承
+
+   ```
+   AbstractAnnotationConfigDispatcherServletInitializer
+   ```
+
+   抽象类来进行配置的项目：
+
+   1. **Servlet WebApplicationContext子容器一定会被初始化，即使你的getServletConfigClasses方法返回null，那只是表示子容器将不会加载你的任何其他配置而已。**
+   2. **如果getRootConfigClasses方法返回null，那么父容器将不会被初始化，也就是说此时项目只有一个Servlet WebApplicationContext。**
+
+3. 如果同时配置了父子容器，那么请求将会先到达子容器。而在@ReqestMapping的解析过程中，只是对Servlet WebApplicationContext容器中的bean进行处理的，并没有去查找父容器的bean。因此如果Controller被配置到父容器中，那么因为不会对父容器中含有@RequestMapping注解的函数进行处理，更不会生成相应的handler。那么对应的请求过来的时候由于找不到对应的hander，将无法访问该Controller内部的@ReqestMapping对应的资源。
+
+另外需要注意的是，`Spring boot`采用了不同的初始化顺序和策略，使用Spring配置来引导自身和嵌入式Servlet容器（tomcat）。Filter和 Servlet 在 Spring 配置中声明，并在嵌入式的Servlet 容器中注册。
+
+**如果只配置“一个”容器，那么建议只配置Servlet WebApplicationContext，也就是和DispatcherServlet关联的容器。**
 
 # 特殊 Bean 类
 
