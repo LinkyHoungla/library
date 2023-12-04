@@ -321,7 +321,7 @@ my-project
 
 配置文件在 pom.xml 文件中使用 activeProfiles 或者 profiles 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 POM，并且用来给参数设定不同的目标环境（比如说，开发（Development）、测试（Testing）和生产环境（Production）中数据库服务器的地址）。
 
-## 类型
+**类型**
 
 1. **项目级（Per Project）**：
    + **位置：** 定义在项目的 POM 文件 `pom.xml` 中。
