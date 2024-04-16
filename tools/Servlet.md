@@ -1,5 +1,8 @@
 # 简介
 
+> Servlet 是 Server Applet 的简称，译为“服务器端小程序”。
+> Servlet 是 Java 的一套技术标准，规定了如何使用 Java 来开发动态网站。
+
 *Servlet 为创建基于 web 的应用程序提供了基于组件、独立于平台的方法，可以不受 CGI 程序的性能限制。Servlet 有权限访问所有的 Java API，包括访问企业级数据库的 JDBC API。*
 
 Java Servlet 是运行在 Web 服务器或应用服务器上的程序，它是作为来自 Web 浏览器或其他 HTTP 客户端的请求和 HTTP 服务器上的数据库或应用程序之间的中间层；使用 Servlet 可以收集来自网页表单的用户输入，呈现来自数据库或者其他源的记录，还可以动态创建网页。

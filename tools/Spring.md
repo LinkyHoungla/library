@@ -1751,7 +1751,91 @@ beanFactory.registerScope("thread", threadScope);
 
 >   当你把 `<aop:scoped-proxy/>` 放在 `FactoryBean` 实现的 `<bean>` 声明中时，是 factory bean 本身被限定了scope，而不是从 `getObject()` 返回的对象。
 
-#### 性质
+## 性质
+
+### 生命周期回调
+
+为了与容器对Bean生命周期的管理进行交互，你可以实现Spring `InitializingBean` 和 `DisposableBean` 接口。容器为前者调用 `afterPropertiesSet()`，为后者调用 `destroy()`，让Bean在初始化和销毁你的Bean时执行某些动作。
+
+在内部，Spring框架使用 `BeanPostProcessor` 实现来处理它能找到的任何回调接口并调用相应的方法。如果你需要自定义功能或其他Spring默认不提供的生命周期行为，你可以自己实现一个 `BeanPostProcessor`。
+
+除了初始化和销毁回调外，Spring管理的对象还可以实现 `Lifecycle` 接口，以便这些对象能够参与启动和关闭过程，这是由容器自己的生命周期驱动的。
+
+#### 初始化回调
+
+`org.springframework.beans.factory.InitializingBean` 接口让Bean在容器对Bean设置了所有必要的属性后执行初始化工作。`InitializingBean` 接口指定了一个方法。
+
+```java
+void afterPropertiesSet() throws Exception;
+```
+
+我们建议你不要使用 `InitializingBean` 接口，因为它不必要地将代码与Spring耦合。另外，我们建议使用 `@PostConstruct` 注解或指定一个POJO初始化方法。在基于XML的配置元数据中，你可以使用 `init-method` 属性来指定具有 void 无参数签名的方法的名称。对于Java配置，你可以使用 `@Bean` 的 `initMethod` 属性。
+
+```xml
+<bean id="exampleInitBean" class="examples.ExampleBean" init-method="init"/>
+```
+
+#### 销毁回调
+
+实现 `org.springframework.beans.factory.DisposableBean` 接口可以让Bean在包含它的容器被销毁时获得一个回调。`DisposableBean` 接口指定了一个方法。
+
+```java
+void destroy() throws Exception;
+```
+
+我们建议你不要使用 `DisposableBean` 回调接口，因为它不必要地将代码耦合到Spring。另外，我们建议使用 [`@PreDestroy`](https://springdoc.cn/spring/core.html#beans-postconstruct-and-predestroy-annotations) 注解或指定一个bean定义所支持的通用方法。对于基于XML的配置元数据，你可以使用 `<bean/>` 上的 `destroy-method` 属性。使用Java配置，你可以使用 `@Bean` 的 `destroyMethod` 属性。
+
+```xml
+<bean id="exampleInitBean" class="examples.ExampleBean" destroy-method="cleanup"/>
+```
+
+#### 默认方法
+
+你写初始化和销毁方法回调时，如果不使用Spring特定的 `InitializingBean` 和 `DisposableBean` 回调接口，你通常会写一些名称为 `init()`、`initialize()`、`dispose()` 等的方法。理想情况下，这种生命周期回调方法的名称在整个项目中是标准化的，这样所有的开发者都会使用相同的方法名称，确保一致性。
+
+你可以将Spring容器配置为在每个Bean上 "寻找" 命名的初始化和销毁回调方法名称。这意味着你，作为应用开发者，可以编写你的应用类并使用名为 `init()` 的初始化回调，而不必为每个Bean定义配置 `init-method="init"` 属性。当Bean被创建时，Spring IoC容器会调用该方法（并且符合 [之前描述](https://springdoc.cn/spring/core.html#beans-factory-lifecycle) 的标准生命周期回调约定）。这一特性也为初始化和销毁方法的回调执行了一致的命名规则。
+
+假设你的初始化回调方法被命名为 `init()`，你的销毁回调方法被命名为 `destroy()`。那么你的类就类似于下面这个例子中的类。
+
+```java
+public class DefaultBlogService implements BlogService {
+
+    private BlogDao blogDao;
+
+    public void setBlogDao(BlogDao blogDao) {
+        this.blogDao = blogDao;
+    }
+
+    // this is (unsurprisingly) the initialization callback method
+    public void init() {
+        if (this.blogDao == null) {
+            throw new IllegalStateException("The [blogDao] property must be set.");
+        }
+    }
+}
+```
+
+然后你可以在一个类似于以下的bean中使用该类。
+
+```xml
+<beans default-init-method="init">
+
+    <bean id="blogService" class="com.something.DefaultBlogService">
+        <property name="blogDao" ref="blogDao" />
+    </bean>
+
+</beans>
+```
+
+顶层 `<beans/>` 元素属性中 `default-init-method` 属性的存在会使Spring IoC容器识别出Bean类中名为 `init` 的方法作为初始化方法的回调。当一个Bean被创建和装配时，如果Bean类有这样的方法，它就会在适当的时候被调用。
+
+你可以通过使用顶层 `<beans/>` 元素上的 `default-destroy-method` 属性，类似地配置 `destroy` 方法回调（在XML中，也就是）。
+
+如果现有的Bean类已经有了与惯例不同的回调方法，你可以通过使用 `<bean/`> 本身的 `init-method` 和 `destroy-method` 属性来指定（在XML中）方法的名称，从而覆盖默认值。
+
+**Spring容器保证在Bean被提供了所有的依赖关系后立即调用配置的初始化回调。因此，初始化回调是在原始Bean引用上调用的，这意味着AOP拦截器等还没有应用到Bean上。**
+
+首先完全创建一个目标Bean，然后应用一个带有拦截器链的AOP代理（比如说）。如果目标Bean和代理是分开定义的，你的代码甚至可以绕过代理，与原始的目标Bean进行交互。因此，将拦截器应用于 `init` 方法是不一致的，因为这样做会将目标Bean的生命周期与它的代理或拦截器联系起来，当你的代码直接与原始目标Bean交互时，会留下奇怪的语义。
 
 ## 继承
 
@@ -2474,3 +2558,294 @@ Spring AOP使用JDK动态代理或CGLIB来为特定的目标对象创建代理�
 
 # 数据
 
+## 数据绑定
+
+`org.springframework.beans` 包遵守 JavaBeans 标准。JavaBean是一个具有默认无参数构造函数的类，它遵循一个命名惯例，（例如）一个名为 `bingoMadness` 的属性将有一个setter方法 `setBingoMadness(..)` 和一个getter方法 `getBingoMadness()`。关于JavaBeans和规范的更多信息，请参见 [javabeans](https://docs.oracle.com/javase/8/docs/api/java/beans/package-summary.html)。
+
+beans包中一个相当重要的类是 `BeanWrapper` 接口及其相应的实现（`BeanWrapperImpl`）。正如在javadoc中引用的那样，`BeanWrapper` 提供了设置和获取属性值（单独或批量）、获取属性描述符以及查询属性以确定它们是否可读或可写的功能。此外，`BeanWrapper` 还提供了对嵌套属性的支持，使得对子属性的属性设置可以达到无限的深度。`BeanWrapper` 还支持添加标准的JavaBeans `PropertyChangeListeners` 和 `VetoableChangeListeners` 的能力，而不需要在目标类中添加支持代码。最后但同样重要的是，`BeanWrapper` 提供了对设置索引属性的支持。`BeanWrapper` 通常不被应用程序代码直接使用，而是被 `DataBinder` 和 `BeanFactory` 使用。
+
+`BeanWrapper` 的工作方式在一定程度上可以从它的名字中看出：它包装一个Bean来对该Bean进行操作，例如设置和检索属性。
+
+### PropertyEditor
+
+Spring使用 `PropertyEditor` 的概念来实现 `Object` 和 `String` 之间的转换。用不同于对象本身的方式来表示属性是很方便的。例如，一个 `Date` 可以用人类可读的方式表示（如 `String`: `'2007-14-09'`），而我们仍然可以将人类可读的形式转换回原始日期（或者，甚至更好，将任何以人类可读形式输入的日期转换回 `Date` 对象）。这种行为可以通过注册 `java.beans.PropertyEditor` 类型的自定义编辑器来实现。在 `BeanWrapper` 上注册自定义编辑器，或者在特定的IoC容器中注册（如前一章中提到的），使其了解如何将属性转换为所需类型。关于 `PropertyEditor` 的更多信息，请参阅 [Oracle的 `java.beans` 包的javadoc](https://docs.oracle.com/javase/8/docs/api/java/beans/package-summary.html)。
+
+有几个在Spring中使用属性（property）编辑的例子。
+
++ 在Bean上设置属性是通过使用 `PropertyEditor` 实现完成的。当你使用 `String` 作为你在XML文件中声明的某个Bean的属性的值时，Spring（如果相应属性的setter有一个 `Class` 参数）会使用 `ClassEditor` 来尝试将该参数解析为一个 `Class` 对象。
++ 在Spring的MVC框架中，解析HTTP请求参数是通过使用各种 `PropertyEditor` 实现完成的，你可以在 `CommandController` 的所有子类中手动绑定。
+
+Spring有许多内置的 `PropertyEditor` 实现，使生活变得简单。它们都位于 `org.springframework.beans.propertyeditors` 包中。大多数（但不是全部，如下表所示）默认由 `BeanWrapperImpl` 注册。如果属性编辑器可以以某种方式配置，你仍然可以注册你自己的变体来覆盖默认的。下表描述了Spring提供的各种 `PropertyEditor` 实现。
+
+| 类                        | 说明                                                         |
+| :------------------------ | :----------------------------------------------------------- |
+| `ByteArrayPropertyEditor` | 字节数组的编辑器。将字符串转换为其相应的字节表示。默认由 `BeanWrapperImpl` 注册。 |
+| `ClassEditor`             | 将代表类的字符串解析为实际的类，反之亦然。当没有找到一个类时，会抛出一个 `IllegalArgumentException`。默认情况下，通过 `BeanWrapperImpl` 注册。 |
+| `CustomBooleanEditor`     | 用于 `Boolean` 属性的可定制的属性编辑器。默认情况下，由 `BeanWrapperImpl` 注册，但可以通过注册它的一个自定义实例作为自定义编辑器来重写。 |
+| `CustomCollectionEditor`  | 集合的属性编辑器，将任何源 `Collection` 转换为一个给定的目标 `Collection` 类型。 |
+| `CustomDateEditor`        | `java.util.Date` 的可定制属性编辑器，支持自定义 `DateFormat`。默认情况下没有注册。必须根据需要由用户注册适当的格式（format）。 |
+| `CustomNumberEditor`      | 可定制的属性编辑器，用于任何 `Number` 子类，如 `Integer`、`Long`、`Float` 或 `Double`。默认情况下，由 `BeanWrapperImpl` 注册，但可以通过注册它的一个自定义实例作为自定义编辑器来重写。 |
+| `FileEditor`              | 将字符串解析为 `java.io.File` 对象。默认情况下，由 `BeanWrapperImpl` 注册。 |
+| `InputStreamEditor`       | 单向属性编辑器，可以接受一个字符串并产生（通过中间的 `ResourceEditor` 和 `Resource`）一个 `InputStream`，这样 `InputStream` 属性可以直接设置为字符串。注意，默认用法不会为你关闭 `InputStream`。默认情况下，由 `BeanWrapperImpl` 注册。 |
+| `LocaleEditor`            | 可以将字符串解析为 `Locale` 对象，反之亦然（字符串格式为 `[language]_[country]_[variant]`，与 `Locale` 的 `toString()` 方法相同）。也接受空格作为分隔符，作为下划线的替代。默认情况下，由 `BeanWrapperImpl` 注册。 |
+| `PatternEditor`           | 可以将字符串解析为 `java.util.regex.Pattern` 对象，反之亦然。 |
+| `PropertiesEditor`        | 可以将字符串（格式为 `java.util.Properties` 类的javadoc中定义的格式）转换为 `Properties` 对象。默认情况下，由 `BeanWrapperImpl` 注册。 |
+| `StringTrimmerEditor`     | trim 字符串的属性编辑器。可选择允许将空字符串转换为 `null` 值。默认情况下没有注册 - 必须由用户注册。 |
+| `URLEditor`               | 可以将一个 URL 的字符串表示解析为一个实际的 `URL` 对象。默认情况下，由 `BeanWrapperImpl` 注册。 |
+
+Spring使用 `java.beans.PropertyEditorManager` 来设置可能需要的属性编辑器的搜索路径。搜索路径还包括 `sun.bean.editors`，其中包括 `Font`、`Color` 等类型的 `PropertyEditor` 实现，以及大多数的原始类型。还要注意的是，如果 `PropertyEditor` 类与它们所处理的类在同一个包中，并且与该类的名称相同，并附加了 `Editor`，那么标准的JavaBeans基础设施就会自动发现这些类（无需你明确注册它们）。例如，我们可以有以下的类和包结构，这足以让 `SomethingEditor` 类被识别并作为 `Something` 类型属性的 `PropertyEditor` 使用。
+
+注意，你也可以在这里使用标准的 `BeanInfo` JavaBeans机制（ [这里](https://docs.oracle.com/javase/tutorial/javabeans/advanced/customization.html) 有一些介绍）。下面的例子使用 `BeanInfo` 机制，将一个或多个 `PropertyEditor` 实例与关联类的属性显式注册。
+
+#### 自定义
+
+当把Bean属性设置为字符串值时，Spring IoC容器最终会使用标准的JavaBeans `PropertyEditor` 实现来把这些字符串转换成属性的复杂类型。Spring预先注册了一些自定义的 `PropertyEditor` 实现（例如，将表示为字符串的类名转换为 `Class` 对象）。此外，Java的标准JavaBeans `PropertyEditor` 查询机制让一个类的 `PropertyEditor` 被适当地命名，并与它提供支持的类放在同一个包里，这样它就能被自动找到。
+
+如果需要注册其他的自定义 `PropertyEditors`，有几种机制可用。最手动的方法是使用 `ConfigurableBeanFactory` 接口的 `registerCustomEditor()` 方法，假设你有一个 `BeanFactory` 引用，这种方法通常并不方便，也不推荐。另一种（略微更方便）的机制是使用一个特殊的Bean工厂后处理器，叫做 `CustomEditorConfigurer`。尽管你可以使用 `BeanFactory` 实现的Bean工厂后处理器，但 `CustomEditorConfigurer` 有一个嵌套的属性设置，所以我们强烈建议你在 `ApplicationContext` 中使用它，在那里你可以以类似于任何其他bean的方式部署它，并且它可以被自动检测和应用。
+
+请注意，所有的 Bean 工厂和 application context 都会通过使用 `BeanWrapper` 来处理属性转换，自动使用一些内置的属性编辑器（PropertyEditor）。`BeanWrapper` 注册的标准属性编辑器在 [上一节](https://springdoc.cn/spring/core.html#beans-beans-conversion) 中列出。此外， `ApplicationContext` 还覆盖或添加额外的编辑器，以适合特定 application context 类型的方式处理资源查找。
+
+标准JavaBeans的 `PropertyEditor` 实例被用来将以字符串表示的属性值转换为属性的实际复杂类型。你可以使用 `CustomEditorConfigurer`，一个bean工厂的后处理程序，方便地在 `ApplicationContext` 中添加对额外的 `PropertyEditor` 实例的支持。
+
+下面的例子显示了如何使用 `CustomEditorConfigurer` 向 `ApplicationContext` 注册新的 `PropertyEditor`，然后 `ApplicationContext` 将能够根据需要使用它。
+
+```xml
+<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+    <property name="customEditors">
+        <map>
+            <entry key="example.ExoticType" value="example.ExoticTypeEditor"/>
+        </map>
+    </property>
+</bean>
+```
+
+### PropertyEditorRegister
+
+另一种在Spring容器中注册属性编辑器的机制是创建和使用 `PropertyEditorRegistrar`。当你需要在几种不同情况下使用同一组属性编辑器时，这个接口特别有用。你可以编写一个相应的注册器，并在每种情况下重复使用它。`PropertyEditorRegistrar` 实例与一个名为 `PropertyEditorRegistry` 的接口协同工作，这个接口由Spring `BeanWrapper`（和 `DataBinder`）实现。`PropertyEditorRegistrar` 实例在与 `CustomEditorConfigurer`（此处有 [描述](https://springdoc.cn/spring/core.html#beans-beans-conversion-customeditor-registration)）一起使用时特别方便，后者暴露了一个名为 `setPropertyEditorRegistrars(..)` 的属性。以这种方式添加到 `CustomEditorConfigurer` 的 `PropertyEditorRegistrar` 实例可以很容易地与 `DataBinder` 和Spring MVC控制器共享。此外，它避免了对自定义编辑器的同步需求。 `PropertyEditorRegistrar` 被期望为每个bean创建尝试创建新的 `PropertyEditor` 实例。
+
+下一个例子显示了如何配置一个 `CustomEditorConfigurer`，并将我们的 `CustomPropertyEditorRegistrar` 的实例注入其中。
+
+```xml
+<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+    <property name="propertyEditorRegistrars">
+        <list>
+            <ref bean="customPropertyEditorRegistrar"/>
+        </list>
+    </property>
+</bean>
+
+<bean id="customPropertyEditorRegistrar"
+    class="com.foo.editors.spring.CustomPropertyEditorRegistrar"/>
+```
+
+最后，对于那些使用 [Spring的MVC Web框架](https://springdoc.cn/spring/web.html#mvc) 的人来说，将 `PropertyEditorRegistrar` 与数据绑定的Web controller 结合起来使用是非常方便的（这与本章的重点有点不同）。下面的例子在 `@InitBinder` 方法的实现中使用了 `PropertyEditorRegistrar`。
+
+```java
+@Controller
+public class RegisterUserController {
+
+    private final PropertyEditorRegistrar customPropertyEditorRegistrar;
+
+    RegisterUserController(PropertyEditorRegistrar propertyEditorRegistrar) {
+        this.customPropertyEditorRegistrar = propertyEditorRegistrar;
+    }
+
+    @InitBinder
+    void initBinder(WebDataBinder binder) {
+        this.customPropertyEditorRegistrar.registerCustomEditors(binder);
+    }
+
+    // other methods related to registering a User
+}
+```
+
+这种 `PropertyEditor` 注册方式可以带来简洁的代码（`@InitBinder` 方法的实现只有一行），并且可以将常见的 `PropertyEditor` 注册代码封装在一个类中，然后根据需要在众多controller中共享。
+
+## 类型转换
+
+`core.convert` 包提供了一个通用的类型转换系统。该系统定义了一个用于实现类型转换逻辑的SPI和一个用于在运行时执行类型转换的API。在Spring容器中，你可以使用这个系统作为 `PropertyEditor` 实现的替代品，将外化的Bean属性值字符串转换为所需的属性类型。你也可以在你的应用程序中任何需要类型转换的地方使用public API。
+
+### Convert
+
+实现类型转换逻辑的SPI很简单，而且是强类型的，正如下面的接口定义所示。
+
+```java
+package org.springframework.core.convert.converter;
+
+public interface Converter<S, T> {
+
+    T convert(S source);
+}
+```
+
+要创建你自己的转换器，请实现 `Converter` 接口并将 `S` 作为你要转换的类型，`T` 作为你要转换的类型。如果需要将 `S` 的集合或数组转换为 `T` 的数组或集合，你也可以透明地应用这样一个转换器，前提是已经注册了一个委托数组或集合转换器（`DefaultConversionService` 默认如此）。
+
+对于每个对 `convert(S)` 的调用，源参数被保证不为空。如果转换失败，你的 `Converter` 可以抛出任何未经检查的异常。特别是，它应该抛出一个 `IllegalArgumentException` 来报告一个无效的源值。请注意确保你的 `Converter` 实现是线程安全的。
+
+### ConvertFactory
+
+当你需要集中整个类层次结构的转换逻辑时（例如，当从 `String` 转换到 `Enum` 对象时），你可以实现 `ConverterFactory`，如下例所示。
+
+```java
+package org.springframework.core.convert.converter;
+
+public interface ConverterFactory<S, R> {
+
+    <T extends R> Converter<S, T> getConverter(Class<T> targetType);
+}
+```
+
+泛型 `S` 是你要转换的类型，`R` 是定义你可以转换的类的范围的基类型。然后实现 `getConverter(Class<T>)`，其中T是R的一个子类。
+
+### GenericConverter
+
+当你需要一个复杂的 `Converter` 实现时，考虑使用 `GenericConverter` 接口。 `GenericConverter` 具有比 `Converter` 更灵活但不那么强类型的签名，支持在多种源和目标类型之间进行转换。此外，`GenericConverter` 提供了可用的源和目标字段上下文，你可以在实现转换逻辑时使用。这样的上下文让类型转换由字段注解或字段签名上声明的通用信息驱动。下面的列表显示了 `GenericConverter` 的接口定义。
+
+```java
+package org.springframework.core.convert.converter;
+
+public interface GenericConverter {
+
+    public Set<ConvertiblePair> getConvertibleTypes();
+
+    Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType);
+}
+```
+
+为了实现一个 `GenericConverter`，让 `getConvertibleTypes()` 返回支持的源类型 → 目标类型对。然后实现 `convert(Object, TypeDescriptor, TypeDescriptor)` 来包含你的转换逻辑。源 `TypeDescriptor` 提供对持有被转换值的源字段的访问。目标 `TypeDescriptor` 提供对目标字段的访问，转换后的值将被设置。
+
+`GenericConverter` 的一个好例子是在Java数组和集合之间进行转换的转换器。这样一个 `ArrayToCollectionConverter` 会对声明目标集合类型的字段进行内省，以解决集合的元素类型。这让源数组中的每个元素在集合被设置在目标字段上之前被转换为集合元素类型。
+
+> 因为 `GenericConverter` 是一个更复杂的SPI接口，你应该只在需要时使用它。对于基本的类型转换需求，请青睐 `Converter` 或 `ConverterFactory`。
+
+###  ConditionalGenericConverter
+
+有时，你想让一个 `Converter` 只在一个特定的条件成立的情况下运行。例如，你可能想只在目标字段上存在特定注解的情况下运行一个 `Converter`，或者你可能想只在目标类上定义了特定的方法（比如 `static valueOf` 方法）的情况下运行一个 `Converter`。 `ConditionalGenericConverter` 是 `GenericConverter` 和 `ConditionalConverter` 接口的联合体，可以让你定义这样的自定义匹配标准。
+
+```java
+public interface ConditionalConverter {
+
+    boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType);
+}
+
+public interface ConditionalGenericConverter extends GenericConverter, ConditionalConverter {
+}
+```
+
+`ConditionalGenericConverter` 的一个好例子是 `IdToEntityConverter`，它在持久性实体标识符和实体引用之间进行转换。这样的 `IdToEntityConverter` 可能只在目标实体类型声明了静态查找方法（例如，`findAccount(Long)`）时才匹配。你可以在 `matches(TypeDescriptor, TypeDescriptor)` 的实现中执行这样的查找方法检查。
+
+### ConversionService
+
+`ConversionService` 定义了一个统一的API，用于在运行时执行类型转换逻辑。Converter 通常在下面的门面接口后面运行。
+
+```java
+package org.springframework.core.convert;
+
+public interface ConversionService {
+
+    boolean canConvert(Class<?> sourceType, Class<?> targetType);
+
+    <T> T convert(Object source, Class<T> targetType);
+
+    boolean canConvert(TypeDescriptor sourceType, TypeDescriptor targetType);
+
+    Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType);
+}
+```
+
+大多数 `ConversionService` 实现也实现了 `ConverterRegistry`，它提供了一个用于注册转换器的SPI。在内部，`ConversionService` 的实现会委托其注册的转换器来执行类型转换逻辑。
+
+`core.convert.support` 包中提供了一个强大的 `ConversionService` 实现。 `GenericConversionService` 是一个通用的实现，适合在大多数环境中使用。 `ConversionServiceFactory` 提供了一个方便的工厂来创建常见的 `ConversionService` 配置。
+
+#### 配置
+
+`ConversionService` 是一个无状态的对象，旨在应用启动时被实例化，然后在多个线程之间共享。在Spring应用程序中，你通常为每个Spring容器（或 `ApplicationContext`）配置一个 `ConversionService` 实例。当框架需要进行类型转换时，Spring会拾取该 `ConversionService` 并使用它。你也可以将这个 `ConversionService` 注入到你的任何Bean中并直接调用它。
+
+> 如果没有向Spring注册 `ConversionService`，就会使用基于 `PropertyEditor` 的原始系统。
+
+要向Spring注册一个默认的 `ConversionService`，请添加以下bean定义，其 `id` 为 `conversionService`。
+
+```xml
+<bean id="conversionService"
+    class="org.springframework.context.support.ConversionServiceFactoryBean"/>
+```
+
+一个默认的 `ConversionService` 可以在字符串、数字、枚举、集合、map和其他常见类型之间进行转换。要用你自己的自定义转换器来补充或覆盖默认的转换器，请设置 `converters` 属性。属性值可以实现 `Converter`、`ConverterFactory` 或 `GenericConverter` 的任何接口。
+
+```xml
+<bean id="conversionService"
+        class="org.springframework.context.support.ConversionServiceFactoryBean">
+    <property name="converters">
+        <set>
+            <bean class="example.MyCustomConverter"/>
+        </set>
+    </property>
+</bean>
+```
+
+在Spring MVC应用程序中使用 `ConversionService` 也很常见。
+
+在某些情况下，你可能希望在转换过程中应用格式化。关于使用 `FormattingConversionServiceFactoryBean` 的细节，请参见 [`FormatterRegistry` SPI](https://springdoc.cn/spring/core.html#format-FormatterRegistry-SPI)。
+
+## 字段格式化
+
+### Formatter
+
+用于实现字段格式化逻辑的 `Formatter` SPI是简单的、强类型的。下面的列表显示了 `Formatter` 接口的定义。
+
+```java
+package org.springframework.format;
+
+public interface Formatter<T> extends Printer<T>, Parser<T> {
+}
+```
+
+`Formatter` 扩展自 `Printer` 和 `Parser` 构件接口。下面的列表显示了这两个接口的定义。
+
+```java
+public interface Printer<T> {
+
+    String print(T fieldValue, Locale locale);
+}
+public interface Parser<T> {
+
+    T parse(String clientValue, Locale locale) throws ParseException;
+}
+```
+
+要创建你自己的 `Formatter`，实现前面所示的 `Formatter` 接口。将 `T` 参数化为你希望格式化的对象的类型—例如，`java.util.Date`。实现 `print()` 操作，打印一个 `T` 的实例，以便在客户机上显示。实现 `parse()` 操作，从客户端 locale 返回的格式化表示中解析 `T` 的一个实例。如果解析尝试失败，你的 `Formatter` 应该抛出一个 `ParseException` 或 `IllegalArgumentException`。请注意确保你的 `Formatter` 的实现是线程安全的。
+
+`format` 子包提供了几个 `Formatter` 的实现，作为一种方便。`Number` 包提供 `NumberStyleFormatter`、`CurrencyStyleFormatter` 和 `PercentStyleFormatter`，用于格式化使用 `java.text.NumberFormat` 的 `Number` 对象。`datetime` 包提供了一个 `DateFormatter` 来格式化使用 `java.text.DateFormat` 的 `java.util.Date` 对象。
+
+### FormatterRegistry
+
+`FormatterRegistry` 是一个用于注册formatter和converter的SPI。 `FormattingConversionService` 是 `FormatterRegistry` 的一个实现，适用于大多数环境。你可以通过编程或声明的方式将这个变体配置为Spring Bean，例如，通过使用 `FormattingConversionServiceFactoryBean`。因为这个实现也实现了 `ConversionService`，所以你可以直接配置它与 Spring 的 `DataBinder` 和Spring表达式语言（SpEL）一起使用。
+
+下面的列表显示了 `FormatterRegistry` SPI。
+
+```java
+package org.springframework.format;
+
+public interface FormatterRegistry extends ConverterRegistry {
+
+    void addPrinter(Printer<?> printer);
+
+    void addParser(Parser<?> parser);
+
+    void addFormatter(Formatter<?> formatter);
+
+    void addFormatterForFieldType(Class<?> fieldType, Formatter<?> formatter);
+
+    void addFormatterForFieldType(Class<?> fieldType, Printer<?> printer, Parser<?> parser);
+
+    void addFormatterForFieldAnnotation(AnnotationFormatterFactory<? extends Annotation> annotationFormatterFactory);
+}
+```
+
+如前面的列表所示，你可以通过字段类型或注解来 formatter。
+
+`FormatterRegistry` SPI让你集中配置格式化规则，而不是在你的controller中重复这种配置。例如，你可能想强制要求所有的date字段以某种方式格式化，或者要求具有特定注解的字段以某种方式格式化。通过一个共享的 `FormatterRegistry`，你只需定义一次这些规则，并且在需要格式化的时候就可以应用这些规则。
+
+当为一个给定的format类别（如日期格式化）注册多个相关的converter和format时， `FormatterRegistrar` 很有用。在声明式注册不充分的情况下，它也是有用的—例如，当一个format需要在与它自己的 `<T>` 不同的特定字段类型下被索引，或者注册一个 `Printer`/`Parser` 对时。下一节将提供更多关于converter和format注册的信息。
+
+## 数据校验
